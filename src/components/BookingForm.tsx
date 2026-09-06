@@ -104,14 +104,14 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-6 overflow-hidden"
+            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card space-y-6 w-full max-w-full overflow-hidden"
           >
-            {/* 1. Treatment & Duration (Semantic Fieldset via contents) */}
-            <fieldset className="contents">
+            {/* 1. Treatment & Duration */}
+            <fieldset className="border-none p-0 m-0 space-y-5 w-full min-w-0">
               <legend className="sr-only">Service and Duration Selection</legend>
 
-              {/* Service Dropdown (Full width) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
+              {/* Service Dropdown */}
+              <div className="flex flex-col gap-2 w-full min-w-0">
                 <label
                   htmlFor="booking-service-select"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -134,8 +134,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                 </select>
               </div>
 
-              {/* Session Duration Selector (Full width) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2" role="group" aria-labelledby="booking-duration-label">
+              {/* Session Duration Selector */}
+              <div className="flex flex-col gap-2 w-full min-w-0" role="group" aria-labelledby="booking-duration-label">
                 <span
                   id="booking-duration-label"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -143,7 +143,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   <Clock className="w-4 h-4 text-botanical shrink-0" />
                   <span>Session Duration *</span>
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full min-w-0">
                   {(['60 min', '75 min', '90 min', '120 min'] as const).map((dur) => (
                     <button
                       key={dur}
@@ -164,181 +164,185 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
               </div>
             </fieldset>
 
-            {/* 2. Personal & Contact Information (Semantic Fieldset via contents) */}
-            <fieldset className="contents">
+            {/* 2. Personal & Contact Information */}
+            <fieldset className="border-none p-0 m-0 w-full min-w-0">
               <legend className="sr-only">Client Contact Information</legend>
 
-              {/* Full Name */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
-                <label
-                  htmlFor="booking-fullname"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <User className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Full Name *</span>
-                </label>
-                <input
-                  type="text"
-                  id="booking-fullname"
-                  name="fullName"
-                  autoComplete="name"
-                  required
-                  placeholder="e.g. Sarah Miller"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
-                />
-              </div>
-
-              {/* Phone / WhatsApp */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
-                <label
-                  htmlFor="booking-phone"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <Phone className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Phone / WhatsApp *</span>
-                </label>
-                <input
-                  type="tel"
-                  id="booking-phone"
-                  name="phone"
-                  autoComplete="tel"
-                  required
-                  placeholder="e.g. 403-396-4233"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
-                />
-              </div>
-
-              {/* Email Address (Full width) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
-                <label
-                  htmlFor="booking-email"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <Mail className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Email Address *</span>
-                </label>
-                <input
-                  type="email"
-                  id="booking-email"
-                  name="email"
-                  autoComplete="email"
-                  required
-                  placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
-                />
-              </div>
-            </fieldset>
-
-            {/* 3. Appointment Time & Location (Semantic Fieldset via contents) */}
-            <fieldset className="contents">
-              <legend className="sr-only">Appointment Schedule and Calgary Location</legend>
-
-              {/* Preferred Date (Mobile-Safe with Integrated Calendar Icon) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
-                <label
-                  htmlFor="booking-date"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <Calendar className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Preferred Date *</span>
-                </label>
-                <div className="relative w-full min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-6 w-full min-w-0">
+                {/* Full Name */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-1">
+                  <label
+                    htmlFor="booking-fullname"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <User className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Full Name *</span>
+                  </label>
                   <input
-                    type="date"
-                    id="booking-date"
-                    name="preferredDate"
+                    type="text"
+                    id="booking-fullname"
+                    name="fullName"
+                    autoComplete="name"
                     required
-                    value={formData.preferredDate}
-                    onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                    onClick={(e) => {
-                      try {
-                        e.currentTarget.showPicker?.();
-                      } catch {
-                        // fallback
-                      }
-                    }}
-                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer block box-border pr-11"
+                    placeholder="e.g. Sarah Miller"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
                   />
-                  <Calendar className="w-4 h-4 text-botanical absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Phone / WhatsApp */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-1">
+                  <label
+                    htmlFor="booking-phone"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <Phone className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Phone / WhatsApp *</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="booking-phone"
+                    name="phone"
+                    autoComplete="tel"
+                    required
+                    placeholder="e.g. 403-396-4233"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-2">
+                  <label
+                    htmlFor="booking-email"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <Mail className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Email Address *</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="booking-email"
+                    name="email"
+                    autoComplete="email"
+                    required
+                    placeholder="your@email.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
+                  />
                 </div>
               </div>
+            </fieldset>
 
-              {/* Preferred Time */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
-                <label
-                  htmlFor="booking-time"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <Clock className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Preferred Time *</span>
-                </label>
-                <select
-                  id="booking-time"
-                  name="preferredTime"
-                  value={formData.preferredTime}
-                  onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer box-border"
-                >
-                  <option>8:00 AM</option>
-                  <option>10:00 AM</option>
-                  <option>12:00 PM</option>
-                  <option>2:00 PM</option>
-                  <option>4:00 PM</option>
-                  <option>6:00 PM</option>
-                </select>
-              </div>
+            {/* 3. Appointment Time & Location */}
+            <fieldset className="border-none p-0 m-0 w-full min-w-0">
+              <legend className="sr-only">Appointment Schedule and Calgary Location</legend>
 
-              {/* Calgary Address / Quadrant (Full width) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
-                <label
-                  htmlFor="booking-address"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <MapPin className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Calgary Location / Address *</span>
-                </label>
-                <input
-                  type="text"
-                  id="booking-address"
-                  name="addressArea"
-                  autoComplete="street-address"
-                  required
-                  placeholder="e.g. 123 Skyview Ranch NE, Calgary, AB"
-                  value={formData.addressArea}
-                  onChange={(e) => setFormData({ ...formData, addressArea: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-6 w-full min-w-0">
+                {/* Preferred Date (Fixed Mobile Width & Contained Calendar Icon) */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-1">
+                  <label
+                    htmlFor="booking-date"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <Calendar className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Preferred Date *</span>
+                  </label>
+                  <div className="relative w-full min-w-0 max-w-full">
+                    <input
+                      type="date"
+                      id="booking-date"
+                      name="preferredDate"
+                      required
+                      value={formData.preferredDate}
+                      onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker?.();
+                        } catch {
+                          // fallback
+                        }
+                      }}
+                      className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer block box-border pr-11"
+                    />
+                    <Calendar className="w-4 h-4 text-botanical absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
 
-              {/* Special Requests / Notes (Full width) */}
-              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
-                <label
-                  htmlFor="booking-notes"
-                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-                >
-                  <FileText className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Special Requests or Focus Areas (Optional)</span>
-                </label>
-                <textarea
-                  id="booking-notes"
-                  name="specialNotes"
-                  rows={3}
-                  placeholder="e.g. Focus on neck and shoulders, preferred organic oil scent..."
-                  value={formData.specialNotes}
-                  onChange={(e) => setFormData({ ...formData, specialNotes: e.target.value })}
-                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs resize-none box-border"
-                />
+                {/* Preferred Time */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-1">
+                  <label
+                    htmlFor="booking-time"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <Clock className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Preferred Time *</span>
+                  </label>
+                  <select
+                    id="booking-time"
+                    name="preferredTime"
+                    value={formData.preferredTime}
+                    onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer box-border"
+                  >
+                    <option>8:00 AM</option>
+                    <option>10:00 AM</option>
+                    <option>12:00 PM</option>
+                    <option>2:00 PM</option>
+                    <option>4:00 PM</option>
+                    <option>6:00 PM</option>
+                  </select>
+                </div>
+
+                {/* Calgary Address / Quadrant */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-2">
+                  <label
+                    htmlFor="booking-address"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <MapPin className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Calgary Location / Address *</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="booking-address"
+                    name="addressArea"
+                    autoComplete="street-address"
+                    required
+                    placeholder="e.g. 123 Skyview Ranch NE, Calgary, AB"
+                    value={formData.addressArea}
+                    onChange={(e) => setFormData({ ...formData, addressArea: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
+                  />
+                </div>
+
+                {/* Special Requests / Notes */}
+                <div className="flex flex-col gap-2 w-full min-w-0 sm:col-span-2">
+                  <label
+                    htmlFor="booking-notes"
+                    className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                  >
+                    <FileText className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Special Requests or Focus Areas (Optional)</span>
+                  </label>
+                  <textarea
+                    id="booking-notes"
+                    name="specialNotes"
+                    rows={3}
+                    placeholder="e.g. Focus on neck and shoulders, preferred organic oil scent..."
+                    value={formData.specialNotes}
+                    onChange={(e) => setFormData({ ...formData, specialNotes: e.target.value })}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs resize-none box-border"
+                  />
+                </div>
               </div>
             </fieldset>
 
-            {/* Submit Button (Full width) */}
-            <div className="pt-2 sm:col-span-2 min-w-0">
+            {/* Submit Button */}
+            <div className="pt-2 w-full min-w-0">
               <button
                 type="submit"
                 id="booking-submit-btn"
