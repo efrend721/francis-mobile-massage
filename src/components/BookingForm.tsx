@@ -104,14 +104,14 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-6"
+            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-6 overflow-hidden"
           >
             {/* 1. Treatment & Duration (Semantic Fieldset via contents) */}
             <fieldset className="contents">
               <legend className="sr-only">Service and Duration Selection</legend>
 
               {/* Service Dropdown (Full width) */}
-              <div className="flex flex-col gap-2 sm:col-span-2">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
                 <label
                   htmlFor="booking-service-select"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -124,7 +124,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   name="serviceId"
                   value={formData.serviceId}
                   onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none font-medium transition-all shadow-xs cursor-pointer"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none font-medium transition-all shadow-xs cursor-pointer box-border"
                 >
                   {SERVICES_DATA.map((srv) => (
                     <option key={srv.id} value={srv.id}>
@@ -135,7 +135,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
               </div>
 
               {/* Session Duration Selector (Full width) */}
-              <div className="flex flex-col gap-2 sm:col-span-2" role="group" aria-labelledby="booking-duration-label">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2" role="group" aria-labelledby="booking-duration-label">
                 <span
                   id="booking-duration-label"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -169,7 +169,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
               <legend className="sr-only">Client Contact Information</legend>
 
               {/* Full Name */}
-              <div className="flex flex-col gap-2 sm:col-span-1">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
                 <label
                   htmlFor="booking-fullname"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -186,12 +186,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   placeholder="e.g. Sarah Miller"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
                 />
               </div>
 
               {/* Phone / WhatsApp */}
-              <div className="flex flex-col gap-2 sm:col-span-1">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
                 <label
                   htmlFor="booking-phone"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -205,15 +205,15 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   name="phone"
                   autoComplete="tel"
                   required
-                  placeholder="e.g. 403-555-0199"
+                  placeholder="e.g. 403-396-4233"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
                 />
               </div>
 
               {/* Email Address (Full width) */}
-              <div className="flex flex-col gap-2 sm:col-span-2">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
                 <label
                   htmlFor="booking-email"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -230,7 +230,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
                 />
               </div>
             </fieldset>
@@ -239,8 +239,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
             <fieldset className="contents">
               <legend className="sr-only">Appointment Schedule and Calgary Location</legend>
 
-              {/* Preferred Date */}
-              <div className="flex flex-col gap-2 sm:col-span-1">
+              {/* Preferred Date (Mobile-Safe with Integrated Calendar Icon) */}
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
                 <label
                   htmlFor="booking-date"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -248,19 +248,29 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   <Calendar className="w-4 h-4 text-botanical shrink-0" />
                   <span>Preferred Date *</span>
                 </label>
-                <input
-                  type="date"
-                  id="booking-date"
-                  name="preferredDate"
-                  required
-                  value={formData.preferredDate}
-                  onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer"
-                />
+                <div className="relative w-full min-w-0">
+                  <input
+                    type="date"
+                    id="booking-date"
+                    name="preferredDate"
+                    required
+                    value={formData.preferredDate}
+                    onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker?.();
+                      } catch {
+                        // fallback
+                      }
+                    }}
+                    className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer block box-border pr-11"
+                  />
+                  <Calendar className="w-4 h-4 text-botanical absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               {/* Preferred Time */}
-              <div className="flex flex-col gap-2 sm:col-span-1">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-1">
                 <label
                   htmlFor="booking-time"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -273,7 +283,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   name="preferredTime"
                   value={formData.preferredTime}
                   onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer box-border"
                 >
                   <option>8:00 AM</option>
                   <option>10:00 AM</option>
@@ -285,7 +295,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
               </div>
 
               {/* Calgary Address / Quadrant (Full width) */}
-              <div className="flex flex-col gap-2 sm:col-span-2">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
                 <label
                   htmlFor="booking-address"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -302,12 +312,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   placeholder="e.g. 123 Skyview Ranch NE, Calgary, AB"
                   value={formData.addressArea}
                   onChange={(e) => setFormData({ ...formData, addressArea: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
                 />
               </div>
 
               {/* Special Requests / Notes (Full width) */}
-              <div className="flex flex-col gap-2 sm:col-span-2">
+              <div className="flex flex-col gap-2 min-w-0 sm:col-span-2">
                 <label
                   htmlFor="booking-notes"
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -322,18 +332,18 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
                   placeholder="e.g. Focus on neck and shoulders, preferred organic oil scent..."
                   value={formData.specialNotes}
                   onChange={(e) => setFormData({ ...formData, specialNotes: e.target.value })}
-                  className="w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs resize-none"
+                  className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 py-3 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs resize-none box-border"
                 />
               </div>
             </fieldset>
 
             {/* Submit Button (Full width) */}
-            <div className="pt-2 sm:col-span-2">
+            <div className="pt-2 sm:col-span-2 min-w-0">
               <button
                 type="submit"
                 id="booking-submit-btn"
                 name="submit-booking"
-                className="w-full bg-nordic-mist hover:bg-nordic-hover text-white font-bold py-4 px-6 rounded-xl shadow-spa-card hover:shadow-spa-hover transition-all text-base flex items-center justify-center gap-2.5 border border-oak/30 cursor-pointer group"
+                className="w-full bg-nordic-mist hover:bg-nordic-hover text-white font-bold py-4 px-6 rounded-xl shadow-spa-card hover:shadow-spa-hover transition-all text-base flex items-center justify-center gap-2.5 border border-oak/30 cursor-pointer group box-border"
               >
                 <MessageCircle className="w-5 h-5 text-oak group-hover:scale-110 transition-transform" />
                 <span>Confirm & Request Appointment via WhatsApp</span>
