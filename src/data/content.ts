@@ -1,16 +1,16 @@
-import { ServiceItem, TestimonialItem, FAQItem } from '../types';
+﻿import { ServiceItem, TestimonialItem, FAQItem } from '../types';
 
 export const BUSINESS_INFO = {
   brandName: "Recovery & Wellness",
   brandSubtitle: "Luxury Mobile Massage Therapy",
   tagline: "Experience deep relaxation and lasting pain relief in the comfort of your home.",
-  phone: "+1 (403) 680-4812",
-  phoneFormatted: "+1 403-680-4812",
-  whatsappNumber: "14036804812",
+  phone: "+1 (403) 396-4233",
+  phoneFormatted: "+1 403-396-4233",
+  whatsappNumber: "14033964233",
   email: "info@recoverywellnesscalgary.ca",
   location: "Calgary, Alberta, Canada",
   serviceAreas: ["Northwest (NW)", "Southwest (SW)", "Northeast (NE)", "Southeast (SE)", "Airdrie & Surrounding Areas"],
-  hours: "Monday – Saturday: 8:00 AM – 8:00 PM | Sunday: By Advance Appointment",
+  hours: "Monday - Saturday: 8:00 AM - 8:00 PM | Sunday: By Advance Appointment",
   directBillingText: "Direct Billing Available for Alberta Residents (Sun Life, Manulife, Alberta Blue Cross, Canada Life, Green Shield & more)",
   intakeFormUrl: "#intake-form-info",
   therapistName: "Francis",
