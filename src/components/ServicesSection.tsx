@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { SERVICES_DATA } from '../data/content';
 import { ServiceCard } from './ServiceCard';
@@ -15,27 +15,39 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
   const [activePage, setActivePage] = useState(0);
   const [totalPages, setTotalPages] = useState(2);
 
+  const getItemsPerPage = () => {
+    if (typeof window === 'undefined') return 1;
+    if (window.innerWidth >= 1024) return 3;
+    if (window.innerWidth >= 640) return 2;
+    return 1;
+  };
+
   const updatePagination = () => {
     if (sliderRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-      setCanScrollLeft(scrollLeft > 15);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 15);
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
 
-      let itemsPerPage = 1;
-      if (window.innerWidth >= 1024) {
-        itemsPerPage = 3;
-      } else if (window.innerWidth >= 640) {
-        itemsPerPage = 2;
-      }
-
+      const itemsPerPage = getItemsPerPage();
       const pages = Math.ceil(SERVICES_DATA.length / itemsPerPage);
       setTotalPages(pages);
 
-      const pageIndex = Math.min(
-        Math.round(scrollLeft / clientWidth),
-        pages - 1
-      );
-      setActivePage(pageIndex);
+      const children = Array.from(sliderRef.current.children) as HTMLElement[];
+      let closestPage = 0;
+      let minDistance = Infinity;
+
+      for (let p = 0; p < pages; p++) {
+        const targetIndex = Math.min(p * itemsPerPage, children.length - 1);
+        if (children[targetIndex]) {
+          const distance = Math.abs(children[targetIndex].offsetLeft - scrollLeft);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestPage = p;
+          }
+        }
+      }
+
+      setActivePage(closestPage);
     }
   };
 
@@ -54,22 +66,57 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
 
   const slideLeft = () => {
     if (sliderRef.current) {
-      const scrollDistance = sliderRef.current.clientWidth;
-      sliderRef.current.scrollBy({ left: -scrollDistance, behavior: 'smooth' });
+      const container = sliderRef.current;
+      const children = Array.from(container.children) as HTMLElement[];
+      if (!children.length) return;
+
+      const currentScroll = container.scrollLeft;
+      // Find the previous card target with tolerance for smooth snapping
+      let targetScroll = 0;
+      for (let i = children.length - 1; i >= 0; i--) {
+        if (children[i].offsetLeft < currentScroll - 15) {
+          targetScroll = children[i].offsetLeft;
+          break;
+        }
+      }
+
+      container.scrollTo({ left: targetScroll, behavior: 'smooth' });
     }
   };
 
   const slideRight = () => {
     if (sliderRef.current) {
-      const scrollDistance = sliderRef.current.clientWidth;
-      sliderRef.current.scrollBy({ left: scrollDistance, behavior: 'smooth' });
+      const container = sliderRef.current;
+      const children = Array.from(container.children) as HTMLElement[];
+      if (!children.length) return;
+
+      const currentScroll = container.scrollLeft;
+      // Find the next card target with tolerance for smooth snapping
+      let targetScroll = container.scrollWidth - container.clientWidth;
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].offsetLeft > currentScroll + 15) {
+          targetScroll = children[i].offsetLeft;
+          break;
+        }
+      }
+
+      container.scrollTo({ left: targetScroll, behavior: 'smooth' });
     }
   };
 
   const scrollToPage = (pageIdx: number) => {
     if (sliderRef.current) {
-      const targetScroll = pageIdx * sliderRef.current.clientWidth;
-      sliderRef.current.scrollTo({ left: targetScroll, behavior: 'smooth' });
+      const container = sliderRef.current;
+      const children = Array.from(container.children) as HTMLElement[];
+      const itemsPerPage = getItemsPerPage();
+      const targetIndex = Math.min(pageIdx * itemsPerPage, children.length - 1);
+
+      if (children[targetIndex]) {
+        container.scrollTo({
+          left: children[targetIndex].offsetLeft,
+          behavior: 'smooth'
+        });
+      }
     }
   };
 
@@ -135,18 +182,19 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
         </div>
 
         {/* 
-          Horizontal Carousel Container with strict equal heights:
-          • items-stretch ensures all cards in the row have the exact same height
+          Horizontal Carousel Container:
+          - Snap alignment to exact card offsets
+          - Equal card heights via items-stretch
         */}
         <div
           ref={sliderRef}
-          className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth select-none items-stretch"
+          className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth select-none items-stretch scroll-p-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {SERVICES_DATA.map((service) => (
             <div
               key={service.id}
-              className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] flex-shrink-0 snap-start flex flex-col h-auto"
+              className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start flex flex-col h-auto"
             >
               <ServiceCard
                 service={service}

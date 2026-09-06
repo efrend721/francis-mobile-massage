@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Clock, Sparkles, Calendar, ArrowRight } from 'lucide-react';
 import { ServiceItem } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
@@ -68,8 +68,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onBookThisSer
 
           {/* Book This Treatment CTA */}
           <button
+            type="button"
             onClick={() => onBookThisService(service.id)}
-            className="w-full bg-pearl hover:bg-nordic-mist text-nordic-mist hover:text-white font-semibold py-3 px-4 rounded-xl border border-oak/40 transition-all flex items-center justify-center gap-2 text-sm shadow-2xs group/btn cursor-pointer"
+            className="w-full bg-pearl hover:bg-nordic-mist text-nordic-mist hover:text-white font-semibold py-3 px-4 rounded-xl border border-oak/40 transition-all flex items-center justify-center gap-2 text-sm shadow-xs group/btn cursor-pointer"
           >
             <Calendar className="w-4 h-4 text-oak" />
             <span>Book This Treatment</span>
