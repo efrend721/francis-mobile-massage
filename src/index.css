@@ -37,15 +37,17 @@
   }
 }
 
-/* Fix date input sizing and overflowing on mobile browsers (iOS & Android) */
+/* Date input mobile normalization */
 input[type="date"] {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
+  height: 3rem !important;
   box-sizing: border-box !important;
   background-color: #FFFFFF;
 }
@@ -53,6 +55,8 @@ input[type="date"] {
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
   line-height: normal;
+  margin: 0;
+  padding: 0;
 }
 
 input[type="date"]::-webkit-inner-spin-button,
