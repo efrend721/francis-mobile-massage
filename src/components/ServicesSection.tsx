@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { SERVICES_DATA } from '../data/content';
 import { ServiceCard } from './ServiceCard';
@@ -12,112 +12,96 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
   const sliderRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  const [activePage, setActivePage] = useState(0);
-  const [totalPages, setTotalPages] = useState(2);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const getItemsPerPage = () => {
+  const getStep = () => {
     if (typeof window === 'undefined') return 1;
     if (window.innerWidth >= 1024) return 3;
     if (window.innerWidth >= 640) return 2;
     return 1;
   };
 
-  const updatePagination = () => {
-    if (sliderRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-
-      const itemsPerPage = getItemsPerPage();
-      const pages = Math.ceil(SERVICES_DATA.length / itemsPerPage);
-      setTotalPages(pages);
-
-      const children = Array.from(sliderRef.current.children) as HTMLElement[];
-      let closestPage = 0;
-      let minDistance = Infinity;
-
-      for (let p = 0; p < pages; p++) {
-        const targetIndex = Math.min(p * itemsPerPage, children.length - 1);
-        if (children[targetIndex]) {
-          const distance = Math.abs(children[targetIndex].offsetLeft - scrollLeft);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestPage = p;
-          }
-        }
-      }
-
-      setActivePage(closestPage);
-    }
-  };
-
-  useEffect(() => {
-    const slider = sliderRef.current;
-    if (slider) {
-      slider.addEventListener('scroll', updatePagination, { passive: true });
-      window.addEventListener('resize', updatePagination);
-      updatePagination();
-      return () => {
-        slider.removeEventListener('scroll', updatePagination);
-        window.removeEventListener('resize', updatePagination);
-      };
-    }
-  }, []);
-
-  const slideLeft = () => {
+  const scrollToIndex = useCallback((index: number) => {
     if (sliderRef.current) {
       const container = sliderRef.current;
-      const children = Array.from(container.children) as HTMLElement[];
-      if (!children.length) return;
+      const validIndex = Math.max(0, Math.min(index, SERVICES_DATA.length - 1));
+      const card = container.children[validIndex] as HTMLElement;
 
-      const currentScroll = container.scrollLeft;
-      // Find the previous card target with tolerance for smooth snapping
-      let targetScroll = 0;
-      for (let i = children.length - 1; i >= 0; i--) {
-        if (children[i].offsetLeft < currentScroll - 15) {
-          targetScroll = children[i].offsetLeft;
-          break;
-        }
-      }
+      if (card) {
+        const containerRect = container.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const targetScroll = container.scrollLeft + (cardRect.left - containerRect.left);
 
-      container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-    }
-  };
-
-  const slideRight = () => {
-    if (sliderRef.current) {
-      const container = sliderRef.current;
-      const children = Array.from(container.children) as HTMLElement[];
-      if (!children.length) return;
-
-      const currentScroll = container.scrollLeft;
-      // Find the next card target with tolerance for smooth snapping
-      let targetScroll = container.scrollWidth - container.clientWidth;
-      for (let i = 0; i < children.length; i++) {
-        if (children[i].offsetLeft > currentScroll + 15) {
-          targetScroll = children[i].offsetLeft;
-          break;
-        }
-      }
-
-      container.scrollTo({ left: targetScroll, behavior: 'smooth' });
-    }
-  };
-
-  const scrollToPage = (pageIdx: number) => {
-    if (sliderRef.current) {
-      const container = sliderRef.current;
-      const children = Array.from(container.children) as HTMLElement[];
-      const itemsPerPage = getItemsPerPage();
-      const targetIndex = Math.min(pageIdx * itemsPerPage, children.length - 1);
-
-      if (children[targetIndex]) {
         container.scrollTo({
-          left: children[targetIndex].offsetLeft,
+          left: Math.max(0, targetScroll),
           behavior: 'smooth'
         });
       }
     }
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (sliderRef.current) {
+      const container = sliderRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+
+      setCanScrollLeft(scrollLeft > 15);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 15);
+
+      // Find the card whose left edge is closest to container left
+      const containerRect = container.getBoundingClientRect();
+      const children = Array.from(container.children) as HTMLElement[];
+
+      let closestIdx = 0;
+      let minDiff = Infinity;
+
+      children.forEach((child, idx) => {
+        const childRect = child.getBoundingClientRect();
+        const diff = Math.abs(childRect.left - containerRect.left);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = idx;
+        }
+      });
+
+      setCurrentIndex(closestIdx);
+    }
+  }, []);
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (slider) {
+      slider.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleScroll);
+      handleScroll();
+
+      return () => {
+        slider.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleScroll);
+      };
+    }
+  }, [handleScroll]);
+
+  const slideLeft = () => {
+    const step = getStep();
+    const targetIdx = Math.max(0, currentIndex - step);
+    scrollToIndex(targetIdx);
+  };
+
+  const slideRight = () => {
+    const step = getStep();
+    const targetIdx = Math.min(SERVICES_DATA.length - 1, currentIndex + step);
+    scrollToIndex(targetIdx);
+  };
+
+  // Calculate total pages and active page for pagination dots
+  const step = getStep();
+  const totalPages = Math.ceil(SERVICES_DATA.length / step);
+  const activePage = Math.min(Math.floor(currentIndex / step), totalPages - 1);
+
+  const handleDotClick = (pageIdx: number) => {
+    const targetIdx = Math.min(pageIdx * step, SERVICES_DATA.length - 1);
+    scrollToIndex(targetIdx);
   };
 
   return (
@@ -153,6 +137,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
           {/* Slider Navigation Arrows (Right / Left) */}
           <div className="flex items-center justify-center gap-3">
             <button
+              type="button"
               onClick={slideLeft}
               disabled={!canScrollLeft}
               aria-label="Previous Massage Treatments"
@@ -166,6 +151,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
             </button>
 
             <button
+              type="button"
               onClick={slideRight}
               disabled={!canScrollRight}
               aria-label="Next Massage Treatments"
@@ -188,7 +174,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
         */}
         <div
           ref={sliderRef}
-          className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth select-none items-stretch scroll-p-0"
+          className="relative flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth select-none items-stretch scroll-p-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {SERVICES_DATA.map((service) => (
@@ -209,7 +195,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
           {[...Array(totalPages)].map((_, idx) => (
             <button
               key={idx}
-              onClick={() => scrollToPage(idx)}
+              type="button"
+              onClick={() => handleDotClick(idx)}
               aria-label={`Go to page ${idx + 1}`}
               className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                 activePage === idx
