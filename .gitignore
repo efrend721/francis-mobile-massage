@@ -1,4 +1,4 @@
-﻿# Logs
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -27,7 +27,11 @@ dist-ssr
 # TypeScript build info
 *.tsbuildinfo
 
-# Environment variables
+# Environment variables & Secrets
 .env
 .env.*
 !.env.example
+.secrets/
+*.secrets/
+client_secret*.json
+google_oauth*.json
