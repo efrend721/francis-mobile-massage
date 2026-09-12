@@ -4,9 +4,10 @@ import { BUSINESS_INFO } from '../data/content';
 
 interface NavbarProps {
   onBookNowClick: () => void;
+  onOpenIntakeForm: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick, onOpenIntakeForm }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -15,12 +16,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick }) => {
     { name: 'Testimonials', href: '#testimonials' },
     { name: 'About Us', href: '#about' },
     { name: 'FAQ', href: '#faq' },
-    { name: 'Intake Form', href: '#intake-form-info', isSpecial: true },
+    { name: 'Intake Form', href: '#intake-form', isSpecial: true, isIntakeModal: true },
   ];
 
-  const handleNavLinkClick = (href: string) => {
+  const handleNavLinkClick = (link: { href: string; isIntakeModal?: boolean }) => {
     setMobileMenuOpen(false);
-    const targetId = href.replace('#', '');
+    if (link.isIntakeModal) {
+      onOpenIntakeForm();
+      return;
+    }
+    const targetId = link.href.replace('#', '');
     const element = document.getElementById(targetId);
     if (element) {
       const headerOffset = 110;
@@ -61,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick }) => {
                 href={link.href}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleNavLinkClick(link.href);
+                  handleNavLinkClick(link);
                 }}
                 className={`text-sm font-medium transition-colors ${
                   link.isSpecial
@@ -113,7 +118,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick }) => {
               href={link.href}
               onClick={(e) => {
                 e.preventDefault();
-                handleNavLinkClick(link.href);
+                handleNavLinkClick(link);
               }}
               className="block px-3 py-2.5 rounded-xl text-base font-semibold text-charcoal hover:bg-pearl hover:text-nordic-mist transition-colors"
             >

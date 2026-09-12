@@ -12,9 +12,22 @@ import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { BotanicalDecor } from './components/BotanicalDecor';
+import { AuthProvider } from './context/AuthContext';
+import { AuthModal } from './components/AuthModal';
+import { IntakeFormModal } from './components/IntakeFormModal';
+import { IntakeFormData } from './types';
 
-export const App: React.FC = () => {
+export const AppContent: React.FC = () => {
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
+  const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
+  const [intakeInitialData, setIntakeInitialData] = useState<Partial<IntakeFormData> | undefined>();
+
+  const handleOpenIntakeForm = (data?: Partial<IntakeFormData>) => {
+    if (data) {
+      setIntakeInitialData(data);
+    }
+    setIsIntakeModalOpen(true);
+  };
 
   const handleScrollToBooking = (serviceId?: string) => {
     if (serviceId) {
@@ -59,8 +72,11 @@ export const App: React.FC = () => {
 
       {/* 100% BULLETPROOF FIXED HEADER (TopBar + Navbar remain permanently anchored at the top) */}
       <header className="fixed top-0 left-0 right-0 z-50 shadow-md bg-card-white">
-        <TopBar />
-        <Navbar onBookNowClick={() => handleScrollToBooking()} />
+        <TopBar onOpenIntakeForm={() => handleOpenIntakeForm()} />
+        <Navbar
+          onBookNowClick={() => handleScrollToBooking()}
+          onOpenIntakeForm={() => handleOpenIntakeForm()}
+        />
       </header>
 
       {/* Main Content with top padding offsetting the fixed header */}
@@ -84,10 +100,13 @@ export const App: React.FC = () => {
         <AboutUs />
 
         {/* Independent Fast Booking Form */}
-        <BookingForm preselectedServiceId={selectedServiceId} />
+        <BookingForm
+          preselectedServiceId={selectedServiceId}
+          onOpenIntakeForm={handleOpenIntakeForm}
+        />
 
         {/* Optional Client Intake Form Callout */}
-        <IntakeFormBanner />
+        <IntakeFormBanner onOpenIntakeForm={() => handleOpenIntakeForm()} />
 
         {/* FAQ Accordion */}
         <FAQSection />
@@ -98,7 +117,23 @@ export const App: React.FC = () => {
 
       {/* Floating WhatsApp Pulse Button */}
       <FloatingWhatsApp />
+
+      {/* In-Page Modals */}
+      <AuthModal />
+      <IntakeFormModal
+        isOpen={isIntakeModalOpen}
+        onClose={() => setIsIntakeModalOpen(false)}
+        initialData={intakeInitialData}
+      />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

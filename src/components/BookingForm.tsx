@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MessageCircle, CheckCircle, MapPin, User, Phone, Mail, Sparkles, FileText } from 'lucide-react';
+import { Calendar, Clock, MessageCircle, CheckCircle, MapPin, User, Phone, Mail, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
 import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
-import { BookingFormData } from '../types';
+import { BookingFormData, IntakeFormData } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
+import { useAuth } from '../context/AuthContext';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface BookingFormProps {
   preselectedServiceId?: string;
+  onOpenIntakeForm?: (data?: Partial<IntakeFormData>) => void;
 }
 
-export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }) => {
+export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
+  const { user, loginWithGooglePopup } = useAuth();
   const [formData, setFormData] = useState<BookingFormData>({
     serviceId: preselectedServiceId || SERVICES_DATA[0].id,
     duration: '60 min',
-    fullName: '',
+    fullName: user?.name || '',
     phone: '',
-    email: '',
+    email: user?.email || '',
     preferredDate: '',
     preferredTime: '10:00 AM',
     addressArea: 'SW Calgary',
@@ -28,6 +32,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
       setFormData((prev) => ({ ...prev, serviceId: preselectedServiceId }));
     }
   }, [preselectedServiceId]);
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name,
+        email: prev.email || user.email,
+      }));
+    }
+  }, [user]);
 
   const selectedService = SERVICES_DATA.find((s) => s.id === formData.serviceId) || SERVICES_DATA[0];
 
@@ -79,7 +93,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
         </div>
 
         {submitted ? (
-          <div className="bg-pearl p-8 sm:p-12 rounded-3xl border border-botanical/30 text-center space-y-4 shadow-spa-card animate-in fade-in">
+          <div className="bg-pearl p-8 sm:p-12 rounded-3xl border border-botanical/30 text-center space-y-5 shadow-spa-card animate-in fade-in">
             <div className="w-16 h-16 bg-botanical text-white rounded-full flex items-center justify-center mx-auto shadow-md">
               <CheckCircle className="w-8 h-8" />
             </div>
@@ -87,8 +101,41 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
               Booking Request Prepared!
             </h3>
             <p className="text-sm sm:text-base text-muted max-w-lg mx-auto">
-              Your appointment details have been formatted. WhatsApp will open with your customized request for instant confirmation.
+              Your appointment details have been formatted. WhatsApp will open with your customized request for instant confirmation with Francis.
             </p>
+
+            {onOpenIntakeForm && (
+              <div className="pt-2 max-w-md mx-auto p-4 bg-card-white rounded-2xl border border-oak/40 shadow-xs space-y-2">
+                <span className="text-xs font-bold text-botanical uppercase tracking-wider block">
+                  Next Step (Recommended)
+                </span>
+                <p className="text-xs text-glacier">
+                  Complete your digital health history now so Francis can arrive ready with tailored therapy.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenIntakeForm({
+                      fullName: formData.fullName,
+                      phone: formData.phone,
+                      email: formData.email,
+                      calgaryQuadrant: formData.addressArea.includes('NW')
+                        ? 'NW'
+                        : formData.addressArea.includes('NE')
+                        ? 'NE'
+                        : formData.addressArea.includes('SE')
+                        ? 'SE'
+                        : 'SW',
+                    })
+                  }
+                  className="w-full py-3 px-4 bg-nordic-mist hover:bg-nordic-slate text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-oak" />
+                  <span>Open Digital Intake Form (1 Min)</span>
+                </button>
+              </div>
+            )}
+
             <div className="pt-2">
               <button
                 type="button"
@@ -106,6 +153,32 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId }
             onSubmit={handleSubmit}
             className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5 sm:gap-y-6 w-full max-w-full overflow-hidden"
           >
+            {/* Google 1-Click Auto-Fill Bar */}
+            <div className="sm:col-span-2 w-full">
+              {user ? (
+                <div className="flex items-center justify-between p-3.5 bg-botanical-light/70 border border-botanical/30 rounded-2xl text-xs sm:text-sm text-charcoal">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-botanical shrink-0" />
+                    <span>Auto-filled as <strong>{user.name}</strong> ({user.email || 'Google Account'})</span>
+                  </div>
+                  <span className="text-botanical font-semibold text-xs hidden sm:inline">Verified Profile</span>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-card-white border border-gray-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="text-xs text-glacier">
+                    <span className="font-semibold text-charcoal block">Save time booking:</span>
+                    Sign in with Google to auto-fill your contact info.
+                  </div>
+                  <div className="w-full sm:w-auto">
+                    <GoogleAuthButton
+                      onClick={loginWithGooglePopup}
+                      text="Sign in with Google"
+                      className="py-2! px-3! text-xs! h-auto!"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
             {/* 1. Service Dropdown */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
               <label

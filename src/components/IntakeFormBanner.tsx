@@ -1,8 +1,11 @@
 import React from 'react';
 import { FileText, Shield, ArrowUpRight, CheckCircle2 } from 'lucide-react';
-import { BUSINESS_INFO } from '../data/content';
 
-export const IntakeFormBanner: React.FC = () => {
+interface IntakeFormBannerProps {
+  onOpenIntakeForm: () => void;
+}
+
+export const IntakeFormBanner: React.FC<IntakeFormBannerProps> = ({ onOpenIntakeForm }) => {
   return (
     <section id="intake-form-info" className="bg-pearl py-12 sm:py-16 border-t border-oak/20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,16 +23,15 @@ export const IntakeFormBanner: React.FC = () => {
               </h3>
             </div>
 
-            <a
-              href={`https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=Hi%20Francis,%20I%20would%20like%20the%20digital%20Intake%20Form%20link.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-botanical-light hover:bg-botanical text-botanical-dark hover:text-white font-semibold px-4 py-2.5 rounded-xl border border-botanical/30 transition-all text-xs sm:text-sm shrink-0 shadow-2xs"
+            <button
+              type="button"
+              onClick={onOpenIntakeForm}
+              className="inline-flex items-center justify-center gap-2 bg-botanical hover:bg-botanical/90 text-white font-semibold px-5 py-3 rounded-xl border border-botanical/30 transition-all text-xs sm:text-sm shrink-0 shadow-md cursor-pointer hover:shadow-lg"
             >
               <FileText className="w-4 h-4" />
-              Request Digital Form Link
+              <span>Open Online Intake Form</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+            </button>
           </div>
 
           <p className="text-sm text-muted leading-relaxed">

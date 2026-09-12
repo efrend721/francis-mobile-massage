@@ -37,3 +37,35 @@ export interface BookingFormData {
   addressArea: string;
   specialNotes: string;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  picture?: string;
+  isGoogleUser: boolean;
+}
+
+export interface IntakeFormData {
+  fullName: string;
+  phone: string;
+  email: string;
+  calgaryQuadrant: string;
+  isFirstVisit: boolean;
+  focusAreas: string[];
+  hasHighBloodPressure: boolean;
+  isPregnant: boolean;
+  pregnancyWeeks: string;
+  hasRecentSurgeriesOrInjuries: boolean;
+  surgeriesDetails: string;
+  hasAllergiesToOilsOrNuts: boolean;
+  allergiesDetails: string;
+  otherHealthNotes: string;
+  pressurePreference: 'light' | 'medium' | 'firm' | 'deep';
+  aromatherapyPreference: 'eucalyptus' | 'lavender' | 'unscented';
+  pipaConsentAccepted: boolean;
+  cancellationPolicyAccepted: boolean;
+  signatureName: string;
+  completedAt?: string;
+}
+
