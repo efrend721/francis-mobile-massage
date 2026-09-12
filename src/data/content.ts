@@ -1,8 +1,8 @@
-﻿import { ServiceItem, TestimonialItem, FAQItem } from '../types';
+import { ServiceItem, TestimonialItem, FAQItem } from '../types';
 
 export const BUSINESS_INFO = {
-  brandName: "Recovery & Wellness",
-  brandSubtitle: "Luxury Mobile Massage Therapy",
+  brandName: "FORM",
+  brandSubtitle: "Recovery & Wellness",
   tagline: "Experience deep relaxation and lasting pain relief in the comfort of your home.",
   phone: "+1 (403) 396-4233",
   phoneFormatted: "+1 403-396-4233",
