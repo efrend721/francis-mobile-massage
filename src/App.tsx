@@ -72,7 +72,7 @@ export const AppContent: React.FC = () => {
 
       {/* 100% BULLETPROOF FIXED HEADER (TopBar + Navbar remain permanently anchored at the top) */}
       <header className="fixed top-0 left-0 right-0 z-50 shadow-md bg-card-white">
-        <TopBar onOpenIntakeForm={() => handleOpenIntakeForm()} />
+        <TopBar />
         <Navbar
           onBookNowClick={() => handleScrollToBooking()}
           onOpenIntakeForm={() => handleOpenIntakeForm()}

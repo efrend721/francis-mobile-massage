@@ -1,13 +1,9 @@
 import React from 'react';
-import { Phone, Clock, FileText, ShieldCheck, UserCheck, LogIn } from 'lucide-react';
+import { Phone, Clock, ShieldCheck, UserCheck, LogIn } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/content';
 import { useAuth } from '../context/AuthContext';
 
-interface TopBarProps {
-  onOpenIntakeForm: () => void;
-}
-
-export const TopBar: React.FC<TopBarProps> = ({ onOpenIntakeForm }) => {
+export const TopBar: React.FC = () => {
   const { user, openAuthModal, logout } = useAuth();
 
   return (
@@ -26,7 +22,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenIntakeForm }) => {
           </span>
         </div>
 
-        {/* Right: Phone, Client Intake Form & Auth */}
+        {/* Right: Phone & Login / User Profile */}
         <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
           <a
             href={`tel:${BUSINESS_INFO.phoneFormatted}`}
@@ -38,17 +34,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenIntakeForm }) => {
             <span className="sm:hidden">Call</span>
           </a>
 
-          <button
-            type="button"
-            onClick={onOpenIntakeForm}
-            className="flex items-center gap-1 text-pearl/90 hover:text-white transition-colors underline underline-offset-2 decoration-oak/60 cursor-pointer font-medium"
-          >
-            <FileText className="w-3.5 h-3.5 text-oak shrink-0" />
-            <span>Intake Form</span>
-          </button>
-
           {user ? (
-            <div className="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-white/20">
+            <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-white/20">
               {user.picture ? (
                 <img
                   src={user.picture}
@@ -58,11 +45,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenIntakeForm }) => {
               ) : (
                 <UserCheck className="w-4 h-4 text-oak shrink-0" />
               )}
-              <span className="hidden md:inline text-oak-light truncate max-w-[100px]">{user.name.split(' ')[0]}</span>
+              <span className="text-oak-light truncate max-w-[90px] sm:max-w-[120px] font-medium">{user.name.split(' ')[0]}</span>
               <button
                 type="button"
                 onClick={logout}
-                className="text-[10px] text-pearl/60 hover:text-white hover:underline ml-1"
+                className="text-[11px] text-pearl/60 hover:text-white hover:underline ml-1 cursor-pointer"
                 title="Sign out"
               >
                 (Exit)
@@ -72,10 +59,10 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenIntakeForm }) => {
             <button
               type="button"
               onClick={() => openAuthModal()}
-              className="flex items-center gap-1 text-[11px] sm:text-xs text-oak-light hover:text-white transition-colors pl-1 sm:pl-2 border-l border-white/20 cursor-pointer"
+              className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-oak-light hover:text-white transition-colors pl-2 sm:pl-3 border-l border-white/20 cursor-pointer"
             >
-              <LogIn className="w-3.5 h-3.5 text-oak" />
-              <span className="hidden sm:inline">Sign In</span>
+              <LogIn className="w-3.5 h-3.5 text-oak shrink-0" />
+              <span>Login</span>
             </button>
           )}
         </div>
