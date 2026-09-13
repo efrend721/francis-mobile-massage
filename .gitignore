@@ -1,3 +1,12 @@
+# ==========================================
+# Frontend (Node / Vite / TypeScript)
+# ==========================================
+node_modules
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
 # Logs
 logs
 *.log
@@ -7,27 +16,42 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node modules
-node_modules
-dist
-dist-ssr
-*.local
+# ==========================================
+# Backend (.NET / C# / ASP.NET Core)
+# ==========================================
+# Build results & Binaries
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+*.publishproj
 
-# Editor directories and files
+# Visual Studio / Rider / IDE cache
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+
+# Visual Studio Code
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# OS generated files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
+Thumbs.db
 *.sw?
 
-# TypeScript build info
-*.tsbuildinfo
-
-# Environment variables & Secrets
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
 .env
 .env.*
 !.env.example
@@ -35,3 +59,4 @@ dist-ssr
 *.secrets/
 client_secret*.json
 google_oauth*.json
+

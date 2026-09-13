@@ -40,7 +40,7 @@ Estructura optimizada: Formulario de Reserva Rápido con selector completo de se
 * Mensaje: *"Hassle-free direct billing & official receipts for all insurance claims."*
 
 ### 5. Services Section (Catálogo con botón "Book This Massage")
-* Cada tarjeta de servicio incluye su descripción, beneficios y un botón *"Book This Treatment"* que baja automáticamente al formulario y pre-selecciona dicho servicio:
+* Cada tarjeta de servicio incluye su descripción, beneficios y un botón *"Book This Treatment"* que baja automáticamente al formulario y preselecciona dicho servicio:
   1. **Swedish & Relaxation Massage**
   2. **Deep Tissue & Therapeutic Massage**
   3. **Hot Stone Therapy**

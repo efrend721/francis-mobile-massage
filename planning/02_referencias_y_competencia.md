@@ -30,7 +30,7 @@ Análisis detallado del sitio web de referencia: **[Gifted Hands Massage](https:
 * **Modalidad dual (Consultorio y A Domicilio / Mobile Massage):** *"Massage anywhere you want it"* (Llevan la mesa de masaje a tu casa u oficina).
 * **Profesionales Registrados y Certificados (RMT - Registered Massage Therapists):** Genera confianza y permite reembolso con seguros.
 * **Reserva Online Inmediata y Formulario de Ingreso (Intake Form):** Facilidad para agendar citas el mismo día o al día siguiente.
-* **Horarios Flexibles:** Atención extendida de lunes a viernes (7am a 9pm) y domingos por la mañana.
+* **Horarios Flexibles:** Atención extendida de lunes a viernes (7 am a 9 pm) y domingos por la mañana.
 * **Banner de Descuentos para Pago Directo:** Ofertas para clientes sin seguro médico.
 
 ---

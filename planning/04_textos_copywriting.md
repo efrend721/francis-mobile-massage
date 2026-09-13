@@ -55,7 +55,7 @@ Textos completos incluyendo el selector interactivo de servicios en el formulari
 * **Card Button:** *Book Prenatal*
 
 #### 5. Aromatherapy Bliss Massage
-* **Hook:** *A multi-sensory journey with pure therapeutic essential oils.*
+* **Hook:** *A multisensory journey with pure therapeutic essential oils.*
 * **Description:** *Custom botanical aromatherapy blends combined with therapeutic bodywork to restore emotional and physical harmony.*
 * **Duration:** *60 min / 90 min*
 * **Card Button:** *Book Aromatherapy*

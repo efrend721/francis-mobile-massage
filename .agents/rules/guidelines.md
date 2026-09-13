@@ -8,7 +8,7 @@ Este documento define las directrices y las **REGLAS TÉCNICAS OBLIGATORIAS E IN
 
 ### A. Carrusel de Servicios Responsivo (Services Slider) - MANDATORIO:
 * **Proporciones Exactas sin Cortes:**
-  * **En Pantallas Grandes / Desktop (1024px+ y 4K / 32"):** Mostrar **exactamente 3 tarjetas completas** (`w-[calc(33.333%-16px)]` con `gap-6`). **Prohibido cortar o truncar la tercera tarjeta.**
+  * **En Pantallas Grandes / Desktop (1024px+ y 4K / 32 pulgadas):** Mostrar **exactamente 3 tarjetas completas** (`w-[calc(33.333%-16px)]` con `gap-6`). **Prohibido cortar o truncar la tercera tarjeta.**
   * **En Tablets (640px a 1023px):** Mostrar **exactamente 2 tarjetas completas** (`w-[calc(50%-12px)]`).
   * **En Teléfonos Móviles (<640px):** Mostrar **1 tarjeta completa al 100% de ancho** (`w-full`) para swipe táctil sin bordes cortados.
 * **Desplazamiento Horizontal (Right to Left):**
