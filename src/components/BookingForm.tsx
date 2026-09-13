@@ -569,7 +569,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 10. Special Requests / Notes */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-12">
               <label
                 htmlFor="booking-notes"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -589,7 +589,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 11. Submit Button */}
-            <div className="pt-2 w-full min-w-0 sm:col-span-2">
+            <div className="pt-2 w-full min-w-0 sm:col-span-12">
               <button
                 type="submit"
                 id="booking-submit-btn"
