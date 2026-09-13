@@ -7,7 +7,6 @@ import { useLocation } from '../context/LocationContext';
 interface CalgaryStatus {
   isOpen: boolean;
   label: string;
-  sublabel: string;
   dotClass: string;
   isNight: boolean;
 }
@@ -25,8 +24,7 @@ function getCalgaryBusinessStatus(): CalgaryStatus {
     if (isOpen) {
       return {
         isOpen: true,
-        label: 'Open Now',
-        sublabel: '8am – 8pm',
+        label: 'Open Now (8am–8pm)',
         dotClass: 'bg-emerald-400',
         isNight: false,
       };
@@ -41,15 +39,13 @@ function getCalgaryBusinessStatus(): CalgaryStatus {
     return {
       isOpen: false,
       label: nextText,
-      sublabel: 'Online 24/7',
       dotClass: 'bg-amber-300',
       isNight: true,
     };
   } catch {
     return {
       isOpen: true,
-      label: 'Open Mon–Sat',
-      sublabel: '8am – 8pm',
+      label: 'Open Mon–Sat (8am–8pm)',
       dotClass: 'bg-emerald-400',
       isNight: false,
     };
@@ -100,7 +96,6 @@ export const TopBar: React.FC = () => {
                 <Sun className="w-3 h-3 text-emerald-400 shrink-0" />
               )}
               <span className="font-semibold text-white/95">{businessStatus.label}</span>
-              <span className="hidden md:inline text-pearl/50 text-[10px]">({businessStatus.sublabel})</span>
             </div>
           </div>
         </div>
