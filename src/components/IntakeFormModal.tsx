@@ -47,7 +47,7 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
     fullName: initialData?.fullName || user?.name || '',
     phone: initialData?.phone || '',
     email: initialData?.email || user?.email || '',
-    calgaryQuadrant: initialData?.calgaryQuadrant || location.quadrant || 'SW',
+    calgaryQuadrant: initialData?.calgaryQuadrant || location.quadrant || 'NW',
     isFirstVisit: initialData?.isFirstVisit ?? true,
     focusAreas: initialData?.focusAreas || ['Neck & Shoulders', 'Lower Back & Lumbar'],
     hasHighBloodPressure: initialData?.hasHighBloodPressure ?? false,

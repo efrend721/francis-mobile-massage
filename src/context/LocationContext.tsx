@@ -20,14 +20,14 @@ interface LocationContextType {
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'form_wellness_user_location';
+const STORAGE_KEY = 'form_wellness_user_location_v2';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const DEFAULT_LOCATION: UserLocation = {
-  displayText: 'Calgary, AB • SW',
+  displayText: 'Calgary, AB • NW',
   city: 'Calgary',
   province: 'AB',
-  quadrant: 'SW',
+  quadrant: 'NW',
   isDetected: false,
   expiresAt: 0,
 };
@@ -36,25 +36,30 @@ const GOOGLE_MAPS_API_KEY =
   import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
   'AIzaSyA1_EOOkixjNehiZbNu1qstgi6IXhZxePM';
 
-// Helper to determine Calgary quadrant from coordinates or address string
-function determineCalgaryQuadrant(lat: number, lng: number, formattedAddress: string): 'SW' | 'NW' | 'SE' | 'NE' | undefined {
-  const upper = formattedAddress.toUpperCase();
-  if (upper.includes(' SW ') || upper.includes(', SW') || upper.endsWith(' SW')) return 'SW';
-  if (upper.includes(' NW ') || upper.includes(', NW') || upper.endsWith(' NW')) return 'NW';
-  if (upper.includes(' SE ') || upper.includes(', SE') || upper.endsWith(' SE')) return 'SE';
-  if (upper.includes(' NE ') || upper.includes(', NE') || upper.endsWith(' NE')) return 'NE';
+/**
+ * Accurately determines Calgary quadrant from coordinates or address string
+ * Centre Street / Macleod Trail (~ -114.0625) divides East and West
+ * Centre Ave / Bow River (~ 51.0486) divides North and South
+ */
+function resolveCalgaryQuadrant(lat: number, lng: number, addressText?: string): 'SW' | 'NW' | 'SE' | 'NE' | 'Airdrie' {
+  if (addressText) {
+    const upper = addressText.toUpperCase();
+    if (upper.includes('AIRDRIE')) return 'Airdrie';
+    if (upper.includes(' NW ') || upper.includes(', NW') || upper.endsWith(' NW') || upper.includes('NORTHWEST')) return 'NW';
+    if (upper.includes(' NE ') || upper.includes(', NE') || upper.endsWith(' NE') || upper.includes('NORTHEAST')) return 'NE';
+    if (upper.includes(' SW ') || upper.includes(', SW') || upper.endsWith(' SW') || upper.includes('SOUTHWEST')) return 'SW';
+    if (upper.includes(' SE ') || upper.includes(', SE') || upper.endsWith(' SE') || upper.includes('SOUTHEAST')) return 'SE';
+  }
 
-  // Centre Street (lng approx -114.062) divides East/West
-  // Centre Ave / Bow River (lat approx 51.050) divides North/South
+  if (lat >= 51.24) return 'Airdrie';
+
   const isNorth = lat >= 51.048;
   const isEast = lng >= -114.062;
 
   if (isNorth && !isEast) return 'NW';
   if (isNorth && isEast) return 'NE';
   if (!isNorth && !isEast) return 'SW';
-  if (!isNorth && isEast) return 'SE';
-
-  return undefined;
+  return 'SE';
 }
 
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,7 +68,6 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: UserLocation = JSON.parse(saved);
-        // Verify cache TTL expiration
         if (parsed.expiresAt && Date.now() < parsed.expiresAt) {
           return parsed;
         }
@@ -76,115 +80,133 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [isDetecting, setIsDetecting] = useState(false);
 
-  // Auto-detect silently on mount if not yet detected
-  useEffect(() => {
-    if (!location.isDetected && typeof navigator !== 'undefined' && 'permissions' in navigator) {
-      navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
-        if (result.state === 'granted') {
-          detectLocation();
-        }
-      }).catch(() => {
-        // Ignore permission query error
-      });
-    }
-  }, []);
-
   const saveLocation = (newLoc: UserLocation) => {
     setLocation(newLoc);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newLoc));
     } catch {
-      // Ignore storage quota
+      // Storage quota ignore
     }
   };
 
+  /**
+   * High-accuracy Geolocation Resolver
+   * 1. Browser GPS Coordinates
+   * 2. Reverse Geocoding (Nominatim / Google)
+   * 3. IP Geolocation Fallback
+   */
   const detectLocation = async (): Promise<void> => {
-    if (!navigator.geolocation) {
-      return;
-    }
-
     setIsDetecting(true);
 
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
+    const resolveCoords = async (latitude: number, longitude: number): Promise<UserLocation> => {
+      let cityName = 'Calgary';
+      let provinceCode = 'AB';
+      let neighborhoodName = '';
+      let addressStr = '';
 
-          try {
-            // Call Google Maps Geocoding API
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
-            );
-
-            if (!response.ok) {
-              throw new Error('Geocoding request failed');
-            }
-
-            const data = await response.json();
-
-            if (data.results && data.results.length > 0) {
-              const firstResult = data.results[0];
-              const formattedAddress: string = firstResult.formatted_address || '';
-
-              let cityName = 'Calgary';
-              let provinceCode = 'AB';
-              let neighborhoodName = '';
-
-              for (const comp of firstResult.address_components) {
-                if (comp.types.includes('locality')) {
-                  cityName = comp.short_name || comp.long_name;
-                }
-                if (comp.types.includes('administrative_area_level_1')) {
-                  provinceCode = comp.short_name || 'AB';
-                }
-                if (comp.types.includes('neighborhood') || comp.types.includes('sublocality')) {
-                  neighborhoodName = comp.short_name || comp.long_name;
-                }
-              }
-
-              const isCalgary = cityName.toLowerCase().includes('calgary');
-              const isAirdrie = cityName.toLowerCase().includes('airdrie');
-
-              let quadrant: 'SW' | 'NW' | 'SE' | 'NE' | 'Airdrie' | undefined;
-              let displayText = `${cityName}, ${provinceCode}`;
-
-              if (isCalgary) {
-                const detectedQuadrant = determineCalgaryQuadrant(latitude, longitude, formattedAddress);
-                quadrant = detectedQuadrant;
-                displayText = detectedQuadrant ? `Calgary, AB • ${detectedQuadrant}` : 'Calgary, AB';
-              } else if (isAirdrie) {
-                quadrant = 'Airdrie';
-                displayText = 'Airdrie & Calgary Area';
-              }
-
-              const resolvedLocation: UserLocation = {
-                displayText,
-                city: cityName,
-                province: provinceCode,
-                quadrant,
-                neighborhood: neighborhoodName,
-                isDetected: true,
-                expiresAt: Date.now() + CACHE_TTL_MS,
-              };
-
-              saveLocation(resolvedLocation);
-            }
-          } catch (err) {
-            console.warn('Google Maps Geocoding notice:', err);
-          } finally {
-            setIsDetecting(false);
-            resolve();
+      // Try reverse geocoding via OpenStreetMap Nominatim
+      try {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+          { headers: { Accept: 'application/json' } }
+        );
+        if (nomRes.ok) {
+          const data = await nomRes.json();
+          addressStr = data.display_name || '';
+          if (data.address) {
+            cityName = data.address.city || data.address.town || data.address.municipality || 'Calgary';
+            provinceCode = data.address['ISO3166-2-lvl4']?.replace('CA-', '') || data.address.state || 'AB';
+            neighborhoodName = data.address.suburb || data.address.neighbourhood || '';
           }
-        },
-        () => {
-          // Denied or unavailable GPS
+        }
+      } catch {
+        // Fallback to geometric math
+      }
+
+      // Try Google Maps Geocoding if available
+      if (!addressStr && GOOGLE_MAPS_API_KEY) {
+        try {
+          const gRes = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+          );
+          if (gRes.ok) {
+            const gData = await gRes.json();
+            if (gData.results && gData.results.length > 0) {
+              addressStr = gData.results[0].formatted_address || '';
+            }
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      const quadrant = resolveCalgaryQuadrant(latitude, longitude, addressStr);
+      const isAirdrie = quadrant === 'Airdrie' || cityName.toLowerCase().includes('airdrie');
+      const displayText = isAirdrie
+        ? 'Airdrie & Calgary Area'
+        : quadrant
+        ? `${cityName}, ${provinceCode} • ${quadrant}`
+        : `${cityName}, ${provinceCode}`;
+
+      return {
+        displayText,
+        city: cityName,
+        province: provinceCode,
+        quadrant,
+        neighborhood: neighborhoodName,
+        isDetected: true,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+    };
+
+    // 1. Try Browser GPS
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      const gpsPromise = new Promise<boolean>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const res = await resolveCoords(pos.coords.latitude, pos.coords.longitude);
+              saveLocation(res);
+              resolve(true);
+            } catch {
+              resolve(false);
+            }
+          },
+          () => resolve(false),
+          { timeout: 5000, enableHighAccuracy: true }
+        );
+      });
+
+      const gpsSuccess = await gpsPromise;
+      if (gpsSuccess) {
+        setIsDetecting(false);
+        return;
+      }
+    }
+
+    // 2. Fallback: Fast IP Geolocation (e.g. FreeIPAPI / IPAPI)
+    try {
+      const ipRes = await fetch('https://freeipapi.com/api/json');
+      if (ipRes.ok) {
+        const ipData = await ipRes.json();
+        if (ipData.latitude && ipData.longitude) {
+          const res = await resolveCoords(ipData.latitude, ipData.longitude);
+          saveLocation(res);
           setIsDetecting(false);
-          resolve();
-        },
-        { timeout: 8000, enableHighAccuracy: false }
-      );
-    });
+          return;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    setIsDetecting(false);
   };
+
+  // Run detection automatically on mount
+  useEffect(() => {
+    detectLocation();
+  }, []);
 
   const setManualQuadrant = (quadrant: 'SW' | 'NW' | 'SE' | 'NE' | 'Airdrie') => {
     const displayText = quadrant === 'Airdrie' ? 'Airdrie & Calgary Area' : `Calgary, AB • ${quadrant}`;

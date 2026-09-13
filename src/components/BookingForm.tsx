@@ -23,7 +23,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     email: user?.email || '',
     preferredDate: '',
     preferredTime: '10:00 AM',
-    addressArea: location.displayText || 'Calgary, AB • SW',
+    addressArea: location.displayText || 'Calgary, AB • NW',
     specialNotes: '',
   });
 
@@ -34,6 +34,17 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
       setFormData((prev) => ({ ...prev, serviceId: preselectedServiceId }));
     }
   }, [preselectedServiceId]);
+
+  useEffect(() => {
+    if (location.displayText) {
+      setFormData((prev) => {
+        if (!prev.addressArea || prev.addressArea.startsWith('Calgary, AB')) {
+          return { ...prev, addressArea: location.displayText };
+        }
+        return prev;
+      });
+    }
+  }, [location.displayText]);
 
   useEffect(() => {
     if (user) {
