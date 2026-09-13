@@ -9,9 +9,9 @@ Repositorio oficial de desarrollo para la landing page de servicios de masoterap
 * **Frontend:** React 19 + TypeScript + Vite.
 * **Estilos:** Tailwind CSS con tokens personalizados del tema *Nordic Thermal Mist*.
 * **Gestor de Paquetes:** Exclusivamente **`pnpm`**.
-* **Imágenes:** 100% libres de derechos (Royalty-free de Unsplash en resolución 4K / 2400px para monitores de 32").
+* **Imágenes:** 100% libres de derechos (Royalty-free de Unsplash en resolución 4K / 2400px para monitores de 32 pulgadas).
 * **Gráficos:** Motivos botánicos de ramas de eucalipto en formato vectorial SVG.
-* **Diseño:** Totalmente responsive (Mobile-first para celulares y escalado fluido a pantallas de escritorio 4K).
+* **Diseño:** Responsive en su totalidad (Mobile-first para celulares y escalado fluido a pantallas de escritorio 4K).
 
 ---
 

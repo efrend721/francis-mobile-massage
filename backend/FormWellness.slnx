@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FormWellness.Api/FormWellness.Api.csproj" />
+    <Project Path="src/FormWellness.Application/FormWellness.Application.csproj" />
+    <Project Path="src/FormWellness.Domain/FormWellness.Domain.csproj" />
+    <Project Path="src/FormWellness.Infrastructure/FormWellness.Infrastructure.csproj" />
+  </Folder>
+</Solution>

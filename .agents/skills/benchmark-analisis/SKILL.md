@@ -19,7 +19,7 @@ Cuando el usuario proporcione una URL o un sitio de referencia:
    * ¿A qué dolores específicos del paciente se dirigen (ansiedad, estrés, rupturas, autoestima, etc.)?
    * ¿Cómo explican su metodología terapéutica (Cognitivo-Conductual, Humanista, Gestalt, Sistémica)?
 
-3. **Mecanismos de Conversión (CTAs):**
+3. **Mecanismos de Conversión (CTA):**
    * ¿Cuál es el llamado a la acción principal? (Botón de WhatsApp, formulario de contacto, agenda en línea con Calendly, llamada de valoración gratuita de 15 minutos).
    * Identificar elementos que reducen la fricción para que el usuario dé el primer paso.
 

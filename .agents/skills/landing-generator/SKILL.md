@@ -20,7 +20,7 @@ description: Skill maestra para la generación y mantenimiento de la aplicación
    * Controles: Flechas izquierda/derecha deslizantes por viewport completo y puntos de paginación adaptativos.
 
 3. **Gestor de Paquetes:** Exclusivamente `pnpm`.
-4. **Imágenes 4K:** URLs de Unsplash con `auto=format&fit=crop&w=2400&q=85`.
+4. **Imágenes 4K:** URL de Unsplash con `auto=format&fit=crop&w=2400&q=85`.
 5. **Ramas Botánicas:** SVG vectorial en `BotanicalDecor.tsx` con gradientes de eucalipto.
 
 6. **Estilo de Código Tailwind CSS v4 & WebStorm:**

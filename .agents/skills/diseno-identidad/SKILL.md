@@ -1,6 +1,6 @@
 ---
 name: diseno-identidad
-description: Skill maestra que contiene el patrón de UI oficial aprobado: Nordic Thermal Mist con acentos botánicos de eucalipto, variables CSS del design system, tipografías y componentes UI.
+description: "Skill maestra que contiene el patrón de UI oficial aprobado: Nordic Thermal Mist con acentos botánicos de eucalipto, variables CSS del design system, tipografías y componentes UI."
 ---
 
 # Skill: Patrón de UI Definitivo - Nordic Thermal Mist + Botanical Accents
