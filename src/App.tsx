@@ -81,7 +81,7 @@ export const AppContent: React.FC = () => {
       </header>
 
       {/* Main Content with top padding offsetting the fixed header */}
-      <main className="flex-1 pt-14 md:pt-[108px] lg:pt-[116px]">
+      <main className="flex-1 pt-[88px] sm:pt-[108px] lg:pt-[116px]">
         {/* Hero Section */}
         <Hero
           onBookClick={() => handleScrollToBooking()}
