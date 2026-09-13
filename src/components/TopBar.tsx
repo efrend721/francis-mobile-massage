@@ -34,36 +34,43 @@ export const TopBar: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
         
         {/* Left: Dynamic Calgary Location & Operating Hours */}
-        <div className="flex items-center gap-2 sm:gap-4 truncate">
+        <div className="flex items-center gap-2 sm:gap-4">
           
           {/* Location Interactive Dropdown */}
           <div className="relative" ref={locationMenuRef}>
             <button
               type="button"
+              id="location-menu-button"
               onClick={() => setIsLocationMenuOpen(!isLocationMenuOpen)}
-              className="flex items-center gap-1 sm:gap-1.5 font-medium text-oak-light hover:text-white transition-colors truncate cursor-pointer py-0.5 rounded-sm"
+              className="flex items-center gap-1 sm:gap-1.5 font-medium text-oak-light hover:text-white transition-colors cursor-pointer py-0.5 rounded-sm"
               title="Click to change quadrant or detect location"
             >
               <MapPin className={`w-3.5 h-3.5 text-oak shrink-0 ${isDetecting ? 'animate-bounce' : ''}`} />
-              <span className="truncate">{location.displayText}</span>
-              <ChevronDown className="w-3 h-3 text-oak/70 shrink-0" />
+              <span className="truncate max-w-[130px] sm:max-w-none">{location.displayText}</span>
+              <ChevronDown className={`w-3 h-3 text-oak/70 shrink-0 transition-transform duration-200 ${isLocationMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
             {isLocationMenuOpen && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-card-white text-charcoal rounded-2xl shadow-2xl border border-oak/40 p-3 space-y-2.5 z-50 animate-fade-in text-xs">
+              <div
+                id="location-dropdown-menu"
+                className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white text-charcoal rounded-xl shadow-2xl border border-oak/30 p-3 space-y-2.5 z-50 animate-fade-in text-xs"
+              >
                 <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <span className="font-bold text-charcoal">Calgary Service Area</span>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-nordic-mist" />
+                    <span className="font-bold text-charcoal">Calgary Service Area</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
                       detectLocation();
                       setIsLocationMenuOpen(false);
                     }}
-                    className="flex items-center gap-1 text-[11px] text-botanical font-semibold hover:underline cursor-pointer"
+                    className="flex items-center gap-1 text-[11px] text-botanical hover:text-botanical-dark font-semibold hover:underline cursor-pointer bg-botanical/10 px-2 py-0.5 rounded"
                   >
-                    <Navigation className="w-3 h-3" />
-                    <span>Auto-detect GPS</span>
+                    <Navigation className={`w-3 h-3 ${isDetecting ? 'animate-spin' : ''}`} />
+                    <span>{isDetecting ? 'Detecting...' : 'Auto-detect GPS'}</span>
                   </button>
                 </div>
 
@@ -78,8 +85,8 @@ export const TopBar: React.FC = () => {
                           setManualQuadrant(q.id);
                           setIsLocationMenuOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
-                          isSelected ? 'bg-nordic-mist text-white font-semibold' : 'hover:bg-pearl text-charcoal'
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer text-xs ${
+                          isSelected ? 'bg-nordic-mist text-white font-semibold shadow-xs' : 'hover:bg-pearl text-charcoal'
                         }`}
                       >
                         <span>{q.label}</span>
@@ -89,8 +96,18 @@ export const TopBar: React.FC = () => {
                   })}
                 </div>
 
-                <div className="text-[10px] text-glacier border-t border-gray-100 pt-1.5">
-                  Cached in your browser for 24 hours.
+                <div className="text-[10px] text-glacier border-t border-gray-100 pt-1.5 flex items-center justify-between">
+                  <span>Cached in your browser for 24h</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualQuadrant('SW');
+                      setIsLocationMenuOpen(false);
+                    }}
+                    className="text-botanical hover:text-charcoal underline text-[10px] cursor-pointer"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
             )}
