@@ -98,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookClick, onExploreServices }) =>
                 <img
                   src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=2400&q=85"
                   alt="In-Home Luxury Mobile Massage Therapy Calgary"
-                  className="w-full h-[380px] sm:h-[460px] object-cover object-center transform hover:scale-105 transition-transform duration-700"
+                  className="w-full h-95 sm:h-115 object-cover object-center transform hover:scale-105 transition-transform duration-700"
                   loading="eager"
                 />
                 

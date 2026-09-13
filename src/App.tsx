@@ -13,6 +13,7 @@ import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { BotanicalDecor } from './components/BotanicalDecor';
 import { AuthProvider } from './context/AuthContext';
+import { LocationProvider } from './context/LocationContext';
 import { AuthModal } from './components/AuthModal';
 import { IntakeFormModal } from './components/IntakeFormModal';
 import { IntakeFormData } from './types';
@@ -132,7 +133,9 @@ export const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <LocationProvider>
+        <AppContent />
+      </LocationProvider>
     </AuthProvider>
   );
 };
