@@ -67,7 +67,7 @@ export const TopBar: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-nordic-dark text-pearl/90 text-[11px] sm:text-xs md:text-sm py-1.5 sm:py-2 px-3 sm:px-6 border-b border-nordic-slate/30 relative z-50">
+    <div className="hidden md:block bg-nordic-dark text-pearl/90 text-[11px] sm:text-xs md:text-sm py-1.5 sm:py-2 px-3 sm:px-6 border-b border-nordic-slate/30 relative z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
         
         {/* Left: Dynamic Calgary Location & Operating Status (Mountain Time Live) */}

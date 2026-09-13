@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, X, Sparkles, Calendar } from 'lucide-react';
+import { Menu, X, Sparkles, Calendar, Phone, LogIn, UserCheck } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/content';
+import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
   onBookNowClick: () => void;
@@ -9,6 +10,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick, onOpenIntakeForm }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, openAuthModal, logout } = useAuth();
 
   const navLinks = [
     { name: 'Home', href: '#hero' },
@@ -111,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick, onOpenIntakeForm
 
       {/* Mobile Drawer Menu (Anchored directly under fixed header) */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-card-white border-b-2 border-oak/30 px-4 pt-3 pb-6 space-y-2 shadow-2xl animate-fadeIn max-h-[calc(100vh-120px)] overflow-y-auto">
+        <div className="md:hidden bg-card-white border-b-2 border-oak/30 px-4 pt-3 pb-6 space-y-2 shadow-2xl animate-fadeIn max-h-[calc(100vh-80px)] overflow-y-auto">
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -120,17 +122,59 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick, onOpenIntakeForm
                 e.preventDefault();
                 handleNavLinkClick(link);
               }}
-              className="block px-3 py-2.5 rounded-xl text-base font-semibold text-charcoal hover:bg-pearl hover:text-nordic-mist transition-colors"
+              className="block px-3 py-2 rounded-xl text-base font-semibold text-charcoal hover:bg-pearl hover:text-nordic-mist transition-colors"
             >
               {link.name}
             </a>
           ))}
+
+          {/* Mobile Direct Phone Call */}
+          <div className="pt-2 border-t border-oak/20 flex items-center justify-between gap-2">
+            <a
+              href={`tel:${BUSINESS_INFO.phoneFormatted}`}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-pearl rounded-xl text-xs font-bold text-charcoal hover:bg-oak-light transition-colors"
+            >
+              <Phone className="w-4 h-4 text-botanical" />
+              <span>Call {BUSINESS_INFO.phoneFormatted}</span>
+            </a>
+
+            {user ? (
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-pearl rounded-xl">
+                {user.picture ? (
+                  <img src={user.picture} alt={user.name} className="w-5 h-5 rounded-full" />
+                ) : (
+                  <UserCheck className="w-4 h-4 text-botanical" />
+                )}
+                <span className="text-xs font-semibold truncate max-w-20">{user.name.split(' ')[0]}</span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-[10px] text-muted hover:text-charcoal underline ml-1"
+                >
+                  Exit
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openAuthModal();
+                }}
+                className="flex items-center gap-1 px-3 py-2.5 bg-pearl hover:bg-oak-light rounded-xl text-xs font-bold text-charcoal"
+              >
+                <LogIn className="w-4 h-4 text-botanical" />
+                <span>Login</span>
+              </button>
+            )}
+          </div>
+
           <button
             onClick={() => {
               setMobileMenuOpen(false);
               onBookNowClick();
             }}
-            className="w-full bg-nordic-mist text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 mt-4 text-sm"
+            className="w-full bg-nordic-mist text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 mt-3 text-sm"
           >
             <Calendar className="w-4 h-4 text-oak" />
             Book In-Home Appointment
