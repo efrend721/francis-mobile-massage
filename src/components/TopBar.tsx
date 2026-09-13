@@ -79,8 +79,8 @@ export const TopBar: React.FC = () => {
             <span className="font-semibold text-white tracking-wide">{location.displayText}</span>
           </div>
 
-          {/* In-Home Badge (Visible everywhere) */}
-          <span className="inline-flex items-center gap-1 text-[10px] bg-botanical/25 text-oak-light px-2 py-0.5 rounded-full border border-botanical/30 shrink-0">
+          {/* In-Home Badge (Shown on tablet/desktop >= sm, hidden on mobile) */}
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] bg-botanical/25 text-oak-light px-2 py-0.5 rounded-full border border-botanical/30 shrink-0">
             <Sparkles className="w-2.5 h-2.5 text-oak-light" />
             In-Home
           </span>
