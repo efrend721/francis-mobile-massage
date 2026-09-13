@@ -263,7 +263,9 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                   )}
                   <div>
                     <span className="font-semibold text-botanical block">Verified with Google:</span>
-                    <span>{user.name} ({user.email})</span>
+                    <span>
+                      {user.name.split(' ')[0]} {user.name.split(' ').length > 1 ? `${user.name.split(' ').slice(-1)[0].charAt(0)}.` : ''}
+                    </span>
                   </div>
                 </div>
               )}

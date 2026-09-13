@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MessageCircle, CheckCircle, MapPin, User, Phone, Mail, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  MessageCircle,
+  CheckCircle,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  Sparkles,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+} from 'lucide-react';
 import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
 import { BookingFormData, IntakeFormData } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
@@ -12,9 +26,23 @@ interface BookingFormProps {
   onOpenIntakeForm?: (data?: Partial<IntakeFormData>) => void;
 }
 
+// Format name to First Name + First Initial of Last Name for privacy (e.g., Ervis Morales -> Ervis M.)
+function getPrivacyFormattedName(fullName?: string): string {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const firstName = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${firstName} ${lastInitial}.`;
+}
+
+// Standard Canadian Postal Code regex (e.g. T2P 2C4, T3H0B1, T2S 0A1)
+const CANADIAN_POSTAL_CODE_REGEX = /[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d/;
+
 export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
   const { user, loginWithGooglePopup } = useAuth();
-  const { location, setManualQuadrant } = useLocation();
+  const { setManualQuadrant } = useLocation();
+
   const [formData, setFormData] = useState<BookingFormData>({
     serviceId: preselectedServiceId || SERVICES_DATA[0].id,
     duration: '60 min',
@@ -23,10 +51,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     email: user?.email || '',
     preferredDate: '',
     preferredTime: '10:00 AM',
-    addressArea: location.displayText || 'Calgary, AB • NW',
+    addressArea: '',
     specialNotes: '',
   });
 
+  const [addressError, setAddressError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -34,17 +63,6 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
       setFormData((prev) => ({ ...prev, serviceId: preselectedServiceId }));
     }
   }, [preselectedServiceId]);
-
-  useEffect(() => {
-    if (location.displayText) {
-      setFormData((prev) => {
-        if (!prev.addressArea || prev.addressArea.startsWith('Calgary, AB')) {
-          return { ...prev, addressArea: location.displayText };
-        }
-        return prev;
-      });
-    }
-  }, [location.displayText]);
 
   useEffect(() => {
     if (user) {
@@ -58,8 +76,32 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
 
   const selectedService = SERVICES_DATA.find((s) => s.id === formData.serviceId) || SERVICES_DATA[0];
 
+  // Real-time Postal Code validation
+  const postalCodeMatch = formData.addressArea.match(CANADIAN_POSTAL_CODE_REGEX);
+  const hasPostalCode = Boolean(postalCodeMatch);
+
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const trimmedAddress = formData.addressArea.trim();
+
+    // 1. Check address is not empty
+    if (!trimmedAddress) {
+      setAddressError('Please enter your street address and 6-character Canadian postal code.');
+      const input = document.getElementById('booking-address');
+      input?.focus();
+      return;
+    }
+
+    // 2. Validate Canadian Postal Code
+    if (!CANADIAN_POSTAL_CODE_REGEX.test(trimmedAddress)) {
+      setAddressError('Please include a valid Canadian postal code (e.g. T2S 0A1) so Francis can calculate exact arrival.');
+      const input = document.getElementById('booking-address');
+      input?.focus();
+      return;
+    }
+
+    setAddressError(null);
     setSubmitted(true);
 
     // Create WhatsApp pre-filled message using clean lines and standard encoding
@@ -71,7 +113,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
       `- *Phone:* ${formData.phone}`,
       `- *Email:* ${formData.email}`,
       `- *Date & Time:* ${formData.preferredDate} at ${formData.preferredTime}`,
-      `- *Calgary Area:* ${formData.addressArea}`,
+      `- *Address & Area:* ${formData.addressArea}`,
       `- *Notes:* ${formData.specialNotes.trim() || 'None'}`
     ];
 
@@ -132,11 +174,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                       fullName: formData.fullName,
                       phone: formData.phone,
                       email: formData.email,
-                      calgaryQuadrant: formData.addressArea.includes('NW')
+                      calgaryQuadrant: formData.addressArea.toUpperCase().includes('NW')
                         ? 'NW'
-                        : formData.addressArea.includes('NE')
+                        : formData.addressArea.toUpperCase().includes('NE')
                         ? 'NE'
-                        : formData.addressArea.includes('SE')
+                        : formData.addressArea.toUpperCase().includes('SE')
                         ? 'SE'
                         : 'SW',
                     })
@@ -166,15 +208,20 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             onSubmit={handleSubmit}
             className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5 sm:gap-y-6 w-full max-w-full overflow-hidden"
           >
-            {/* Google 1-Click Auto-Fill Bar */}
+            {/* Google 1-Click Auto-Fill Bar with Privacy Formatting */}
             <div className="sm:col-span-2 w-full">
               {user ? (
                 <div className="flex items-center justify-between p-3.5 bg-botanical-light/70 border border-botanical/30 rounded-2xl text-xs sm:text-sm text-charcoal">
                   <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-botanical shrink-0" />
-                    <span>Auto-filled as <strong>{user.name}</strong> ({user.email || 'Google Account'})</span>
+                    <span>
+                      Auto-filled as <strong>{getPrivacyFormattedName(user.name)}</strong>
+                    </span>
                   </div>
-                  <span className="text-botanical font-semibold text-xs hidden sm:inline">Verified Profile</span>
+                  <div className="flex items-center gap-1 text-botanical font-semibold text-xs">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Privacy Protected (Google Verified)</span>
+                  </div>
                 </div>
               ) : (
                 <div className="p-3.5 bg-card-white border border-gray-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
@@ -192,6 +239,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 </div>
               )}
             </div>
+
             {/* 1. Service Dropdown */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
               <label
@@ -218,25 +266,23 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
 
             {/* 2. Session Duration Selector */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2" role="group" aria-labelledby="booking-duration-label">
-              <span
-                id="booking-duration-label"
-                className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-              >
-                <Clock className="w-4 h-4 text-botanical shrink-0" />
-                <span>Session Duration *</span>
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full min-w-0">
-                {(['60 min', '75 min', '90 min', '120 min'] as const).map((dur) => (
+              <div className="flex items-center justify-between">
+                <span id="booking-duration-label" className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none">
+                  <Clock className="w-4 h-4 text-botanical shrink-0" />
+                  <span>Treatment Duration *</span>
+                </span>
+                <span className="text-[11px] text-glacier">Extended recovery options</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                {(['60 min', '75 min', '90 min'] as const).map((dur) => (
                   <button
                     key={dur}
                     type="button"
-                    name={`duration-${dur.replace(' ', '-')}`}
                     onClick={() => setFormData({ ...formData, duration: dur })}
-                    aria-pressed={formData.duration === dur}
-                    className={`h-12 px-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer shadow-xs flex items-center justify-center ${
+                    className={`h-12 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer ${
                       formData.duration === dur
-                        ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
-                        : 'bg-card-white text-charcoal border-oak/40 hover:bg-oak-light/60 hover:border-oak'
+                        ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs scale-[1.02]'
+                        : 'bg-card-white text-charcoal border-oak/40 hover:border-oak hover:bg-pearl/50'
                     }`}
                   >
                     {dur}
@@ -366,7 +412,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               </select>
             </div>
 
-            {/* 8. Calgary Address / Quadrant */}
+            {/* 8. Address Field with Real-Time Postal Code Validation */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
               <div className="flex items-center justify-between">
                 <label
@@ -374,37 +420,76 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
                 >
                   <MapPin className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Calgary In-Home Address *</span>
+                  <span>Address *</span>
                 </label>
                 <span className="text-[11px] text-botanical font-medium">✓ No travel fees in Calgary</span>
               </div>
+              
               <input
                 type="text"
                 id="booking-address"
                 name="addressArea"
                 autoComplete="street-address"
                 required
-                placeholder="e.g. 123 17th Ave SW, Calgary, AB"
+                placeholder="e.g. 123 17th Ave SW, Calgary, AB T2S 0A1"
                 value={formData.addressArea}
-                onChange={(e) => setFormData({ ...formData, addressArea: e.target.value })}
-                className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
+                onChange={(e) => {
+                  setFormData({ ...formData, addressArea: e.target.value });
+                  if (addressError) setAddressError(null);
+                }}
+                className={`w-full min-w-0 max-w-full bg-card-white border rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:outline-none transition-all shadow-xs box-border ${
+                  addressError
+                    ? 'border-red-400 focus:ring-red-400 bg-red-50/20'
+                    : hasPostalCode
+                    ? 'border-botanical/60 focus:ring-nordic-mist'
+                    : 'border-oak/40 focus:ring-nordic-mist'
+                }`}
               />
+
+              {/* Real-time Validation Feedback */}
+              {addressError ? (
+                <p className="text-xs text-red-600 font-medium flex items-center gap-1.5 pt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  <span>{addressError}</span>
+                </p>
+              ) : hasPostalCode && postalCodeMatch ? (
+                <p className="text-[11px] text-botanical font-semibold flex items-center gap-1.5 pt-0.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-botanical shrink-0" />
+                  <span>Postal Code ({postalCodeMatch[0].toUpperCase()}) recognized • Direct In-Home Service Ready</span>
+                </p>
+              ) : formData.addressArea.trim().length > 3 ? (
+                <p className="text-[11px] text-glacier flex items-center gap-1 pt-0.5">
+                  <span>ℹ️ Please include your 6-character Canadian postal code (e.g. <strong>T2S 0A1</strong>)</span>
+                </p>
+              ) : null}
+
               {/* Quick Calgary Quadrant Selection Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-muted mr-1">Quick pick:</span>
+                <span className="text-[11px] text-muted mr-1 font-medium">Quick pick:</span>
                 {(['SW', 'NW', 'SE', 'NE', 'Airdrie'] as const).map((quadrant) => {
                   const label = quadrant === 'Airdrie' ? 'Airdrie Area' : `${quadrant} Calgary`;
-                  const isMatch = formData.addressArea.includes(quadrant);
+                  const isMatch = formData.addressArea.toUpperCase().includes(quadrant);
                   return (
                     <button
                       key={quadrant}
                       type="button"
                       onClick={() => {
                         setManualQuadrant(quadrant);
-                        setFormData((prev) => ({
-                          ...prev,
-                          addressArea: quadrant === 'Airdrie' ? 'Airdrie & Calgary Area' : `Calgary, AB • ${quadrant}`,
-                        }));
+                        const current = formData.addressArea.trim();
+                        if (!current) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            addressArea: quadrant === 'Airdrie' ? 'Airdrie, AB ' : `${quadrant} Calgary, AB `,
+                          }));
+                        } else if (!current.toUpperCase().includes(quadrant)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            addressArea: `${current} (${label})`,
+                          }));
+                        }
+                        if (addressError) setAddressError(null);
+                        const input = document.getElementById('booking-address');
+                        input?.focus();
                       }}
                       className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                         isMatch
