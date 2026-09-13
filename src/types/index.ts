@@ -35,6 +35,7 @@ export interface BookingFormData {
   preferredDate: string;
   preferredTime: string;
   addressArea: string;
+  postalCode?: string;
   specialNotes: string;
 }
 

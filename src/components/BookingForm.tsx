@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
+  Hash,
 } from 'lucide-react';
 import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
 import { BookingFormData, IntakeFormData } from '../types';
@@ -36,8 +37,17 @@ function getPrivacyFormattedName(fullName?: string): string {
   return `${firstName} ${lastInitial}.`;
 }
 
-// Standard Canadian Postal Code regex (e.g. T2P 2C4, T3H0B1, T2S 0A1)
-const CANADIAN_POSTAL_CODE_REGEX = /[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d/;
+// Standard Canadian Postal Code regex (e.g. T2P 2C4, T3H 0B1, T2S 0A1)
+const CANADIAN_POSTAL_CODE_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
+
+// Auto-format Canadian Postal Code (e.g. "t2s0a1" -> "T2S 0A1")
+function formatPostalCodeInput(value: string): string {
+  const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (cleaned.length > 3) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)}`;
+  }
+  return cleaned;
+}
 
 export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
   const { user, loginWithGooglePopup } = useAuth();
@@ -52,10 +62,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     preferredDate: '',
     preferredTime: '10:00 AM',
     addressArea: '',
+    postalCode: '',
     specialNotes: '',
   });
 
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [postalError, setPostalError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -77,31 +89,43 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
   const selectedService = SERVICES_DATA.find((s) => s.id === formData.serviceId) || SERVICES_DATA[0];
 
   // Real-time Postal Code validation
-  const postalCodeMatch = formData.addressArea.match(CANADIAN_POSTAL_CODE_REGEX);
-  const hasPostalCode = Boolean(postalCodeMatch);
+  const isPostalCodeValid = Boolean(formData.postalCode && CANADIAN_POSTAL_CODE_REGEX.test(formData.postalCode.trim()));
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    let hasError = false;
+
+    // 1. Validate Address
     const trimmedAddress = formData.addressArea.trim();
+    if (!trimmedAddress || trimmedAddress.length < 5) {
+      setAddressError('Please enter your full street name and house/unit number.');
+      hasError = true;
+    } else {
+      setAddressError(null);
+    }
 
-    // 1. Check address is not empty
-    if (!trimmedAddress) {
-      setAddressError('Please enter your street address and 6-character Canadian postal code.');
-      const input = document.getElementById('booking-address');
-      input?.focus();
+    // 2. Validate Postal Code
+    const trimmedPostal = (formData.postalCode || '').trim();
+    if (!trimmedPostal) {
+      setPostalError('Please enter your 6-character Canadian Postal Code.');
+      hasError = true;
+    } else if (!CANADIAN_POSTAL_CODE_REGEX.test(trimmedPostal)) {
+      setPostalError('Please enter a valid format (e.g. T2S 0A1).');
+      hasError = true;
+    } else {
+      setPostalError(null);
+    }
+
+    if (hasError) {
+      if (!trimmedAddress || trimmedAddress.length < 5) {
+        document.getElementById('booking-address')?.focus();
+      } else {
+        document.getElementById('booking-postal-code')?.focus();
+      }
       return;
     }
 
-    // 2. Validate Canadian Postal Code
-    if (!CANADIAN_POSTAL_CODE_REGEX.test(trimmedAddress)) {
-      setAddressError('Please include a valid Canadian postal code (e.g. T2S 0A1) so Francis can calculate exact arrival.');
-      const input = document.getElementById('booking-address');
-      input?.focus();
-      return;
-    }
-
-    setAddressError(null);
     setSubmitted(true);
 
     // Create WhatsApp pre-filled message using clean lines and standard encoding
@@ -113,7 +137,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
       `- *Phone:* ${formData.phone}`,
       `- *Email:* ${formData.email}`,
       `- *Date & Time:* ${formData.preferredDate} at ${formData.preferredTime}`,
-      `- *Address & Area:* ${formData.addressArea}`,
+      `- *Address:* ${formData.addressArea}`,
+      `- *Postal Code:* ${formData.postalCode?.trim().toUpperCase()}`,
       `- *Notes:* ${formData.specialNotes.trim() || 'None'}`
     ];
 
@@ -208,7 +233,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             onSubmit={handleSubmit}
             className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5 sm:gap-y-6 w-full max-w-full overflow-hidden"
           >
-            {/* Google 1-Click Auto-Fill Bar with Privacy Formatting */}
+            {/* Google 1-Click Auto-Fill Bar with Privacy Protection */}
             <div className="sm:col-span-2 w-full">
               {user ? (
                 <div className="flex items-center justify-between p-3.5 bg-botanical-light/70 border border-botanical/30 rounded-2xl text-xs sm:text-sm text-charcoal">
@@ -412,8 +437,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               </select>
             </div>
 
-            {/* 8. Address Field with Real-Time Postal Code Validation */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
+            {/* 8. Address Field */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="booking-address"
@@ -422,16 +447,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                   <MapPin className="w-4 h-4 text-botanical shrink-0" />
                   <span>Address *</span>
                 </label>
-                <span className="text-[11px] text-botanical font-medium">✓ No travel fees in Calgary</span>
+                <span className="text-[10px] text-botanical font-medium">✓ No travel fees in Calgary</span>
               </div>
               
               <input
                 type="text"
                 id="booking-address"
-                name="addressArea"
+                name="address"
                 autoComplete="street-address"
                 required
-                placeholder="e.g. 123 17th Ave SW, Calgary, AB T2S 0A1"
+                placeholder="e.g. 123 17th Ave SW"
                 value={formData.addressArea}
                 onChange={(e) => {
                   setFormData({ ...formData, addressArea: e.target.value });
@@ -440,71 +465,110 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 className={`w-full min-w-0 max-w-full bg-card-white border rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:outline-none transition-all shadow-xs box-border ${
                   addressError
                     ? 'border-red-400 focus:ring-red-400 bg-red-50/20'
-                    : hasPostalCode
+                    : 'border-oak/40 focus:ring-nordic-mist'
+                }`}
+              />
+
+              {addressError && (
+                <p className="text-[11px] text-red-600 font-medium flex items-center gap-1 pt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
+                  <span>{addressError}</span>
+                </p>
+              )}
+            </div>
+
+            {/* 9. Separate Dedicated Postal Code Field */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="booking-postal-code"
+                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                >
+                  <Hash className="w-4 h-4 text-botanical shrink-0" />
+                  <span>Postal Code *</span>
+                </label>
+                {isPostalCodeValid && (
+                  <span className="text-[10px] text-botanical font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Valid
+                  </span>
+                )}
+              </div>
+              
+              <input
+                type="text"
+                id="booking-postal-code"
+                name="postalCode"
+                autoComplete="postal-code"
+                maxLength={7}
+                required
+                placeholder="e.g. T2S 0A1"
+                value={formData.postalCode}
+                onChange={(e) => {
+                  const formatted = formatPostalCodeInput(e.target.value);
+                  setFormData({ ...formData, postalCode: formatted });
+                  if (postalError) setPostalError(null);
+                }}
+                className={`w-full min-w-0 max-w-full bg-card-white border rounded-xl px-4 h-12 text-sm font-medium tracking-wide uppercase text-charcoal focus:ring-2 focus:outline-none transition-all shadow-xs box-border ${
+                  postalError
+                    ? 'border-red-400 focus:ring-red-400 bg-red-50/20'
+                    : isPostalCodeValid
                     ? 'border-botanical/60 focus:ring-nordic-mist'
                     : 'border-oak/40 focus:ring-nordic-mist'
                 }`}
               />
 
-              {/* Real-time Validation Feedback */}
-              {addressError ? (
-                <p className="text-xs text-red-600 font-medium flex items-center gap-1.5 pt-0.5 animate-fadeIn">
-                  <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                  <span>{addressError}</span>
+              {postalError ? (
+                <p className="text-[11px] text-red-600 font-medium flex items-center gap-1 pt-0.5 animate-fadeIn">
+                  <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
+                  <span>{postalError}</span>
                 </p>
-              ) : hasPostalCode && postalCodeMatch ? (
-                <p className="text-[11px] text-botanical font-semibold flex items-center gap-1.5 pt-0.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-botanical shrink-0" />
-                  <span>Postal Code ({postalCodeMatch[0].toUpperCase()}) recognized • Direct In-Home Service Ready</span>
-                </p>
-              ) : formData.addressArea.trim().length > 3 ? (
-                <p className="text-[11px] text-glacier flex items-center gap-1 pt-0.5">
-                  <span>ℹ️ Please include your 6-character Canadian postal code (e.g. <strong>T2S 0A1</strong>)</span>
+              ) : formData.postalCode && !isPostalCodeValid && formData.postalCode.length >= 3 ? (
+                <p className="text-[10px] text-glacier pt-0.5">
+                  Format: 6 characters (e.g. <strong>T2S 0A1</strong>)
                 </p>
               ) : null}
-
-              {/* Quick Calgary Quadrant Selection Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-muted mr-1 font-medium">Quick pick:</span>
-                {(['SW', 'NW', 'SE', 'NE', 'Airdrie'] as const).map((quadrant) => {
-                  const label = quadrant === 'Airdrie' ? 'Airdrie Area' : `${quadrant} Calgary`;
-                  const isMatch = formData.addressArea.toUpperCase().includes(quadrant);
-                  return (
-                    <button
-                      key={quadrant}
-                      type="button"
-                      onClick={() => {
-                        setManualQuadrant(quadrant);
-                        const current = formData.addressArea.trim();
-                        if (!current) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            addressArea: quadrant === 'Airdrie' ? 'Airdrie, AB ' : `${quadrant} Calgary, AB `,
-                          }));
-                        } else if (!current.toUpperCase().includes(quadrant)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            addressArea: `${current} (${label})`,
-                          }));
-                        }
-                        if (addressError) setAddressError(null);
-                        const input = document.getElementById('booking-address');
-                        input?.focus();
-                      }}
-                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                        isMatch
-                          ? 'bg-nordic-mist text-white border-nordic-mist font-semibold shadow-xs'
-                          : 'bg-pearl/80 hover:bg-pearl text-charcoal border-oak/30'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
-            {/* 9. Special Requests / Notes */}
+            {/* Quick Calgary Quadrant Selection Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 pt-0.5">
+              <span className="text-[11px] text-muted mr-1 font-medium">Quick pick:</span>
+              {(['SW', 'NW', 'SE', 'NE', 'Airdrie'] as const).map((quadrant) => {
+                const label = quadrant === 'Airdrie' ? 'Airdrie Area' : `${quadrant} Calgary`;
+                const isMatch = formData.addressArea.toUpperCase().includes(quadrant);
+                return (
+                  <button
+                    key={quadrant}
+                    type="button"
+                    onClick={() => {
+                      setManualQuadrant(quadrant);
+                      const current = formData.addressArea.trim();
+                      if (!current) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          addressArea: quadrant === 'Airdrie' ? 'Airdrie, AB' : `${quadrant} Calgary, AB`,
+                        }));
+                      } else if (!current.toUpperCase().includes(quadrant)) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          addressArea: `${current} (${label})`,
+                        }));
+                      }
+                      if (addressError) setAddressError(null);
+                      document.getElementById('booking-address')?.focus();
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                      isMatch
+                        ? 'bg-nordic-mist text-white border-nordic-mist font-semibold shadow-xs'
+                        : 'bg-pearl/80 hover:bg-pearl text-charcoal border-oak/30'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 10. Special Requests / Notes */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
               <label
                 htmlFor="booking-notes"
@@ -524,7 +588,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               />
             </div>
 
-            {/* 10. Submit Button */}
+            {/* 11. Submit Button */}
             <div className="pt-2 w-full min-w-0 sm:col-span-2">
               <button
                 type="submit"
