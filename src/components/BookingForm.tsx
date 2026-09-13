@@ -4,6 +4,7 @@ import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
 import { BookingFormData, IntakeFormData } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface BookingFormProps {
@@ -13,6 +14,7 @@ interface BookingFormProps {
 
 export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
   const { user, loginWithGooglePopup } = useAuth();
+  const { location, setManualQuadrant } = useLocation();
   const [formData, setFormData] = useState<BookingFormData>({
     serviceId: preselectedServiceId || SERVICES_DATA[0].id,
     duration: '60 min',
@@ -21,7 +23,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     email: user?.email || '',
     preferredDate: '',
     preferredTime: '10:00 AM',
-    addressArea: 'SW Calgary',
+    addressArea: location.displayText || 'Calgary, AB • SW',
     specialNotes: '',
   });
 
@@ -355,24 +357,55 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
 
             {/* 8. Calgary Address / Quadrant */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
-              <label
-                htmlFor="booking-address"
-                className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-              >
-                <MapPin className="w-4 h-4 text-botanical shrink-0" />
-                <span>Calgary Location / Address *</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="booking-address"
+                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                >
+                  <MapPin className="w-4 h-4 text-botanical shrink-0" />
+                  <span>Calgary In-Home Address *</span>
+                </label>
+                <span className="text-[11px] text-botanical font-medium">✓ No travel fees in Calgary</span>
+              </div>
               <input
                 type="text"
                 id="booking-address"
                 name="addressArea"
                 autoComplete="street-address"
                 required
-                placeholder="e.g. 123 Skyview Ranch NE, Calgary, AB"
+                placeholder="e.g. 123 17th Ave SW, Calgary, AB"
                 value={formData.addressArea}
                 onChange={(e) => setFormData({ ...formData, addressArea: e.target.value })}
                 className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs box-border"
               />
+              {/* Quick Calgary Quadrant Selection Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-muted mr-1">Quick pick:</span>
+                {(['SW', 'NW', 'SE', 'NE', 'Airdrie'] as const).map((quadrant) => {
+                  const label = quadrant === 'Airdrie' ? 'Airdrie Area' : `${quadrant} Calgary`;
+                  const isMatch = formData.addressArea.includes(quadrant);
+                  return (
+                    <button
+                      key={quadrant}
+                      type="button"
+                      onClick={() => {
+                        setManualQuadrant(quadrant);
+                        setFormData((prev) => ({
+                          ...prev,
+                          addressArea: quadrant === 'Airdrie' ? 'Airdrie & Calgary Area' : `Calgary, AB • ${quadrant}`,
+                        }));
+                      }}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        isMatch
+                          ? 'bg-nordic-mist text-white border-nordic-mist font-semibold shadow-xs'
+                          : 'bg-pearl/80 hover:bg-pearl text-charcoal border-oak/30'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* 9. Special Requests / Notes */}

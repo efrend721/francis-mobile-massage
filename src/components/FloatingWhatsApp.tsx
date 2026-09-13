@@ -1,9 +1,12 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/content';
+import { useLocation } from '../context/LocationContext';
 
 export const FloatingWhatsApp: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=Hi%20Francis,%20I'm%20interested%20in%20booking%20an%20in-home%20massage%20in%20Calgary.`;
+  const { location } = useLocation();
+  const areaSuffix = location.quadrant ? `in Calgary (${location.quadrant})` : 'in Calgary';
+  const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(`Hi Francis, I'm interested in booking an in-home massage ${areaSuffix}.`)}`;
 
   return (
     <aside aria-label="Quick WhatsApp Contact" className="fixed bottom-6 right-6 z-50 group">

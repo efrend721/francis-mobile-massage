@@ -11,6 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 import { IntakeFormData } from '../types';
 import { BUSINESS_INFO } from '../data/content';
 
@@ -37,6 +38,7 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
   initialData,
 }) => {
   const { user } = useAuth();
+  const { location } = useLocation();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -45,7 +47,7 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
     fullName: initialData?.fullName || user?.name || '',
     phone: initialData?.phone || '',
     email: initialData?.email || user?.email || '',
-    calgaryQuadrant: initialData?.calgaryQuadrant || 'SW',
+    calgaryQuadrant: initialData?.calgaryQuadrant || location.quadrant || 'SW',
     isFirstVisit: initialData?.isFirstVisit ?? true,
     focusAreas: initialData?.focusAreas || ['Neck & Shoulders', 'Lower Back & Lumbar'],
     hasHighBloodPressure: initialData?.hasHighBloodPressure ?? false,
