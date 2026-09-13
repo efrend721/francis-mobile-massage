@@ -409,7 +409,7 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                         type="button"
                         id={chipId}
                         onClick={() => toggleFocusArea(area)}
-                        className={`p-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all text-left flex items-center justify-between min-h-[44px] cursor-pointer ${
+                        className={`p-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all text-left flex items-center justify-between min-h-11 cursor-pointer ${
                           isSelected
                             ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
                             : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
@@ -425,7 +425,7 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
 
               {/* Health Contraindications & Alerts */}
               <div className="space-y-3 pt-2">
-                <span className="block text-xs sm:text-sm font-semibold text-charcoal flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-charcoal">
                   <AlertCircle className="w-4 h-4 text-oak" />
                   Health & Medical Background (Confidential)
                 </span>
@@ -575,7 +575,7 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                             pressurePreference: p.id as 'light' | 'medium' | 'firm' | 'deep',
                           })
                         }
-                        className={`p-3 rounded-xl border text-left transition-all min-h-[44px] cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left transition-all min-h-11 cursor-pointer ${
                           isSelected
                             ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
                             : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
@@ -615,7 +615,7 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                             aromatherapyPreference: a.id as 'eucalyptus' | 'lavender' | 'unscented',
                           })
                         }
-                        className={`p-3 rounded-xl border text-left transition-all min-h-[44px] cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left transition-all min-h-11 cursor-pointer ${
                           isSelected
                             ? 'bg-botanical text-white border-botanical shadow-xs'
                             : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
