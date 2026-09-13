@@ -231,10 +231,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5 sm:gap-y-6 w-full max-w-full overflow-hidden"
+            className="bg-pearl p-6 sm:p-10 lg:p-12 rounded-3xl border border-oak/40 shadow-spa-card grid grid-cols-1 sm:grid-cols-12 gap-x-5 gap-y-5 sm:gap-y-6 w-full max-w-full overflow-hidden"
           >
             {/* Google 1-Click Auto-Fill Bar with Privacy Protection */}
-            <div className="sm:col-span-2 w-full">
+            <div className="sm:col-span-12 w-full">
               {user ? (
                 <div className="flex items-center justify-between p-3.5 bg-botanical-light/70 border border-botanical/30 rounded-2xl text-xs sm:text-sm text-charcoal">
                   <div className="flex items-center gap-2.5">
@@ -266,7 +266,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 1. Service Dropdown */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-12">
               <label
                 htmlFor="booking-service-select"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -290,7 +290,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 2. Session Duration Selector */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2" role="group" aria-labelledby="booking-duration-label">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-12" role="group" aria-labelledby="booking-duration-label">
               <div className="flex items-center justify-between">
                 <span id="booking-duration-label" className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none">
                   <Clock className="w-4 h-4 text-botanical shrink-0" />
@@ -317,7 +317,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 3. Full Name */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-6">
               <label
                 htmlFor="booking-fullname"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -339,7 +339,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 4. Phone Number / WhatsApp */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-6">
               <label
                 htmlFor="booking-phone"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -361,7 +361,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 5. Email Address */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-12">
               <label
                 htmlFor="booking-email"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -383,7 +383,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 6. Preferred Date */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-6">
               <label
                 htmlFor="booking-date"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -413,7 +413,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             </div>
 
             {/* 7. Preferred Time */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-6">
               <label
                 htmlFor="booking-time"
                 className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
@@ -437,8 +437,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               </select>
             </div>
 
-            {/* 8. Address Field */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            {/* 8. Address Field (Wider / Expanded) */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-7 lg:col-span-8">
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="booking-address"
@@ -477,8 +477,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               )}
             </div>
 
-            {/* 9. Separate Dedicated Postal Code Field */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-1">
+            {/* 9. Separate Dedicated Postal Code Field (Compact) */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-5 lg:col-span-4">
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="booking-postal-code"
@@ -524,13 +524,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 </p>
               ) : formData.postalCode && !isPostalCodeValid && formData.postalCode.length >= 3 ? (
                 <p className="text-[10px] text-glacier pt-0.5">
-                  Format: 6 characters (e.g. <strong>T2S 0A1</strong>)
+                  Format: 6 chars (e.g. <strong>T2S 0A1</strong>)
                 </p>
               ) : null}
             </div>
 
             {/* Quick Calgary Quadrant Selection Chips */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 pt-0.5">
+            <div className="flex flex-wrap items-center gap-1.5 sm:col-span-12 pt-0.5">
               <span className="text-[11px] text-muted mr-1 font-medium">Quick pick:</span>
               {(['SW', 'NW', 'SE', 'NE', 'Airdrie'] as const).map((quadrant) => {
                 const label = quadrant === 'Airdrie' ? 'Airdrie Area' : `${quadrant} Calgary`;
