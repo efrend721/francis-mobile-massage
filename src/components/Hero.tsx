@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, MessageCircle, Calendar, Sparkles, MapPin } from 'lucide-react';
 import { BUSINESS_INFO } from '../data/content';
 import { BotanicalDecor } from './BotanicalDecor';
+import { useLocation } from '../context/LocationContext';
 
 interface HeroProps {
   onBookClick: () => void;
@@ -9,7 +10,9 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onBookClick, onExploreServices }) => {
-  const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=Hi%20Francis,%20I'd%20like%20to%20inquire%20about%20an%20in-home%20massage%20in%20Calgary.`;
+  const { location } = useLocation();
+  const areaSuffix = location.quadrant ? `in Calgary (${location.quadrant})` : 'in Calgary';
+  const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(`Hi Francis, I'd like to inquire about an in-home massage ${areaSuffix}.`)}`;
 
   return (
     <section id="hero" className="relative overflow-hidden bg-pearl pt-10 pb-16 lg:py-24">
@@ -32,7 +35,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookClick, onExploreServices }) =>
             {/* Top Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-botanical-light/90 border border-botanical/40 text-botanical-dark text-xs sm:text-sm font-semibold tracking-wide shadow-xs backdrop-blur-xs">
               <Sparkles className="w-4 h-4 text-botanical" />
-              <span>Registered Mobile Massage Therapy • Calgary, AB</span>
+              <span>Registered Mobile Massage Therapy • {location.displayText}</span>
             </div>
 
             {/* Main H1 Headline */}

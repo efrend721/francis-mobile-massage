@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface UserLocation {
   displayText: string;
@@ -24,9 +24,10 @@ const STORAGE_KEY = 'form_wellness_user_location';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const DEFAULT_LOCATION: UserLocation = {
-  displayText: 'Calgary, AB',
+  displayText: 'Calgary, AB • SW',
   city: 'Calgary',
   province: 'AB',
+  quadrant: 'SW',
   isDetected: false,
   expiresAt: 0,
 };
@@ -74,6 +75,19 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [isDetecting, setIsDetecting] = useState(false);
+
+  // Auto-detect silently on mount if not yet detected
+  useEffect(() => {
+    if (!location.isDetected && typeof navigator !== 'undefined' && 'permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
+        if (result.state === 'granted') {
+          detectLocation();
+        }
+      }).catch(() => {
+        // Ignore permission query error
+      });
+    }
+  }, []);
 
   const saveLocation = (newLoc: UserLocation) => {
     setLocation(newLoc);
