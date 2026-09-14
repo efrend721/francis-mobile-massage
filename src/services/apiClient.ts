@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const AZURE_PROD_API_URL = 'https://formwellness-api-enajfpamcjcgfpfj.canadacentral-01.azurewebsites.net/api';
+const LOCAL_DEV_API_URL = 'http://localhost:5000/api';
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? AZURE_PROD_API_URL : LOCAL_DEV_API_URL);
 
 export interface ApiResponse<T> {
   success: boolean;
