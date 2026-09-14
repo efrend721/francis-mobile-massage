@@ -23,7 +23,7 @@ public class ClientIntakeForm : AuditableEntity<Guid>
     public string SignatureName { get; set; } = string.Empty;
 
     public bool IsLatest { get; set; } = true;
-    public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CompletedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public Client Client { get; set; } = null!;
     public PressureLevel PressureLevel { get; set; } = null!;
@@ -36,7 +36,7 @@ public class IntakeFormFocusArea
     public Guid IntakeFormId { get; set; }
     public int FocusAreaId { get; set; }
     public int? PainLevel { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public ClientIntakeForm IntakeForm { get; set; } = null!;
     public FocusArea FocusArea { get; set; } = null!;

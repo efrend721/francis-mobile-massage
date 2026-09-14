@@ -1,14 +1,17 @@
 namespace FormWellness.Application.DTOs;
+
 public class IntakeFocusAreaRequest {
     public int FocusAreaId { get; set; }
     public int? PainLevel { get; set; }
 }
+
 public class IntakeFocusAreaDto {
     public int FocusAreaId { get; set; }
     public string FocusAreaCode { get; set; } = string.Empty;
     public string FocusAreaName { get; set; } = string.Empty;
     public int? PainLevel { get; set; }
 }
+
 public class SaveIntakeFormRequest {
     public int PressureLevelId { get; set; }
     public int AromatherapyId { get; set; }
@@ -30,6 +33,7 @@ public class SaveIntakeFormRequest {
     public string? Phone { get; set; }
     public string? QuadrantCode { get; set; }
 }
+
 public class IntakeFormDto {
     public Guid Id { get; set; }
     public string ClientId { get; set; } = string.Empty;
@@ -50,6 +54,6 @@ public class IntakeFormDto {
     public bool PipaConsentAccepted { get; set; }
     public bool CancellationPolicyAccepted { get; set; }
     public string SignatureName { get; set; } = string.Empty;
-    public DateTime CompletedAt { get; set; }
+    public DateTimeOffset CompletedAt { get; set; }
     public List<IntakeFocusAreaDto> FocusAreas { get; set; } = [];
 }

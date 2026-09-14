@@ -1,6 +1,8 @@
-﻿import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { SERVICES_DATA } from '../data/content';
+import { getServices } from '../services/catalogService';
+import { ServiceItem } from '../types';
 import { ServiceCard } from './ServiceCard';
 import { BotanicalDecor } from './BotanicalDecor';
 
@@ -9,10 +11,23 @@ interface ServicesSectionProps {
 }
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService }) => {
+  const [services, setServices] = useState<ServiceItem[]>(SERVICES_DATA);
   const sliderRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    getServices().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setServices(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getStep = () => {
     if (typeof window === 'undefined') return 1;
@@ -24,7 +39,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
   const scrollToIndex = useCallback((index: number) => {
     if (sliderRef.current) {
       const container = sliderRef.current;
-      const validIndex = Math.max(0, Math.min(index, SERVICES_DATA.length - 1));
+      const validIndex = Math.max(0, Math.min(index, services.length - 1));
       const card = container.children[validIndex] as HTMLElement;
 
       if (card) {
@@ -38,7 +53,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
         });
       }
     }
-  }, []);
+  }, [services]);
 
   const handleScroll = useCallback(() => {
     if (sliderRef.current) {
@@ -90,17 +105,17 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
 
   const slideRight = () => {
     const step = getStep();
-    const targetIdx = Math.min(SERVICES_DATA.length - 1, currentIndex + step);
+    const targetIdx = Math.min(services.length - 1, currentIndex + step);
     scrollToIndex(targetIdx);
   };
 
   // Calculate total pages and active page for pagination dots
   const step = getStep();
-  const totalPages = Math.ceil(SERVICES_DATA.length / step);
+  const totalPages = Math.ceil(services.length / step);
   const activePage = Math.min(Math.floor(currentIndex / step), totalPages - 1);
 
   const handleDotClick = (pageIdx: number) => {
-    const targetIdx = Math.min(pageIdx * step, SERVICES_DATA.length - 1);
+    const targetIdx = Math.min(pageIdx * step, services.length - 1);
     scrollToIndex(targetIdx);
   };
 
@@ -177,7 +192,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onBookService 
           className="relative flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth select-none items-stretch scroll-p-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {SERVICES_DATA.map((service) => (
+          {services.map((service) => (
             <div
               key={service.id}
               className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start flex flex-col h-auto"

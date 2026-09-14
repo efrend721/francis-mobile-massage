@@ -44,10 +44,12 @@ publish/
 !.vscode/tasks.json
 !.vscode/launch.json
 
-# OS generated files
+# OS & Office generated files
 .DS_Store
 Thumbs.db
 *.sw?
+~$*
+.~lock.*#
 
 # ==========================================
 # Environment Variables & Secrets

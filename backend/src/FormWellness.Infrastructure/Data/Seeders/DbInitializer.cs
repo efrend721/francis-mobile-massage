@@ -202,7 +202,7 @@ public static class DbInitializer
                     RoleId = adminRole.Id,
                     Phone = "(403) 555-0199",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow
                 };
                 db.Users.Add(therapist);
                 await db.SaveChangesAsync();
