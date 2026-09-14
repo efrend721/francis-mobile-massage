@@ -265,7 +265,7 @@ public class CoreEntityConfigurations :
         builder.HasOne(e => e.Client)
             .WithMany(c => c.Reviews)
             .HasForeignKey(e => e.ClientId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(e => e.Service)
             .WithMany(s => s.Reviews)
@@ -275,6 +275,6 @@ public class CoreEntityConfigurations :
         builder.HasOne(e => e.Appointment)
             .WithOne(a => a.Review)
             .HasForeignKey<Review>(e => e.AppointmentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

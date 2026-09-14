@@ -10,8 +10,8 @@ public class User : BaseEntity<string>
     public string? Picture { get; set; }
     public string? Phone { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? LastLoginAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? LastLoginAt { get; set; }
 
     public Role Role { get; set; } = null!;
     public ICollection<WorkingSchedule> WorkingSchedules { get; set; } = new List<WorkingSchedule>();
@@ -47,7 +47,7 @@ public class ClientFollowUp : BaseEntity<Guid>
     public int ContactTypeId { get; set; }
     public string? PromoOffered { get; set; }
     public string? OutcomeNotes { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public Client Client { get; set; } = null!;
     public User User { get; set; } = null!;

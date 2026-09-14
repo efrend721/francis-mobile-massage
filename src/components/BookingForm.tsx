@@ -16,7 +16,8 @@ import {
   Hash,
 } from 'lucide-react';
 import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
-import { BookingFormData, IntakeFormData } from '../types';
+import { getServices } from '../services/catalogService';
+import { BookingFormData, IntakeFormData, ServiceItem } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
@@ -52,6 +53,19 @@ function formatPostalCodeInput(value: string): string {
 export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
   const { user, loginWithGooglePopup } = useAuth();
   const { setManualQuadrant } = useLocation();
+  const [services, setServices] = useState<ServiceItem[]>(SERVICES_DATA);
+
+  useEffect(() => {
+    let isMounted = true;
+    getServices().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setServices(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [formData, setFormData] = useState<BookingFormData>({
     serviceId: preselectedServiceId || SERVICES_DATA[0].id,
@@ -86,7 +100,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     }
   }, [user]);
 
-  const selectedService = SERVICES_DATA.find((s) => s.id === formData.serviceId) || SERVICES_DATA[0];
+  const selectedService = services.find((s) => s.id === formData.serviceId) || services[0] || SERVICES_DATA[0];
 
   // Real-time Postal Code validation
   const isPostalCodeValid = Boolean(formData.postalCode && CANADIAN_POSTAL_CODE_REGEX.test(formData.postalCode.trim()));
@@ -281,7 +295,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
                 className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none font-medium transition-all shadow-xs cursor-pointer box-border"
               >
-                {SERVICES_DATA.map((srv) => (
+                {services.map((srv) => (
                   <option key={srv.id} value={srv.id}>
                     {srv.title} - {srv.pricing}
                   </option>

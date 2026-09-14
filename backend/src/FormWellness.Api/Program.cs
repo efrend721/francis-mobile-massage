@@ -52,15 +52,23 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// 5. CORS for Vite Frontend
+// 5. CORS Configuration (Localhost + Cloudflare + Production Domains)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowViteApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            var uri = new Uri(origin);
+            return uri.Host is "localhost" or "127.0.0.1"
+                || uri.Host.EndsWith("recoveryandwellness.com", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith("pages.dev", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith("workers.dev", StringComparison.OrdinalIgnoreCase);
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 

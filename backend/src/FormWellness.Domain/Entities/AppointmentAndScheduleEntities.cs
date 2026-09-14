@@ -11,7 +11,7 @@ public class WorkingSchedule : BaseEntity<int>
     public int SlotIntervalMinutes { get; set; } = 30;
     public int BufferMinutes { get; set; } = 30;
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public User User { get; set; } = null!;
 }
@@ -19,11 +19,11 @@ public class WorkingSchedule : BaseEntity<int>
 public class ScheduleBlackout : BaseEntity<Guid>
 {
     public string UserId { get; set; } = string.Empty;
-    public DateTime StartTime { get; set; }
-    public DateTime EndTime { get; set; }
+    public DateTimeOffset StartTime { get; set; }
+    public DateTimeOffset EndTime { get; set; }
     public bool IsAllDay { get; set; }
     public string? Reason { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public User User { get; set; } = null!;
 }
@@ -38,7 +38,7 @@ public class Appointment : AuditableEntity<Guid>
 
     public int DurationMinutes { get; set; }
     public decimal Price { get; set; }
-    public DateTime ScheduledAt { get; set; }
+    public DateTimeOffset ScheduledAt { get; set; }
     public int BufferMinutes { get; set; } = 30;
 
     public string ServiceAddress { get; set; } = string.Empty;
@@ -63,7 +63,7 @@ public class Review : BaseEntity<Guid>
     public int Rating { get; set; }
     public string ReviewText { get; set; } = string.Empty;
     public bool IsPublic { get; set; } = true;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public Client Client { get; set; } = null!;
     public Service? Service { get; set; }

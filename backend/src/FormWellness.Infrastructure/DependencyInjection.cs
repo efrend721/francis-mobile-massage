@@ -15,7 +15,11 @@ public static class DependencyInjection
             ?? "Host=localhost;Port=5432;Database=form_wellness_db;Username=postgres;Password=postgres";
 
         services.AddDbContext<FormWellnessDbContext>(options =>
-            options.UseNpgsql(connectionString, b => b.MigrationsAssembly(typeof(FormWellnessDbContext).Assembly.FullName)));
+            options.UseSqlServer(connectionString, b =>
+            {
+                b.MigrationsAssembly(typeof(FormWellnessDbContext).Assembly.FullName);
+                b.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
+            }));
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<FormWellnessDbContext>());
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
