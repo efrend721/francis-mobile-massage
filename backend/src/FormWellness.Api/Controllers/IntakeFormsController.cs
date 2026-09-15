@@ -6,19 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FormWellness.Api.Controllers;
 
-public class IntakeFormsController : BaseApiController
+public class IntakeFormsController(IIntakeService intakeService) : BaseApiController
 {
-    private readonly IIntakeService _intakeService;
-
-    public IntakeFormsController(IIntakeService intakeService)
-    {
-        _intakeService = intakeService;
-    }
-
     [HttpPost]
     public async Task<ActionResult<ApiResponse<IntakeFormDto>>> SaveIntakeForm([FromBody] SaveIntakeFormRequest request, CancellationToken ct)
     {
-        var result = await _intakeService.SaveIntakeFormAsync(request, ct);
+        var result = await intakeService.SaveIntakeFormAsync(request, ct);
         return Success(result, "Clinical intake form submitted successfully");
     }
 
@@ -26,7 +19,7 @@ public class IntakeFormsController : BaseApiController
     [HttpGet("my-intake")]
     public async Task<ActionResult<ApiResponse<IntakeFormDto?>>> GetMyLatestIntake(CancellationToken ct)
     {
-        var result = await _intakeService.GetMyLatestIntakeFormAsync(ct);
+        var result = await intakeService.GetMyLatestIntakeFormAsync(ct);
         return Success(result);
     }
 }
