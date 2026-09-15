@@ -7,15 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace FormWellness.Api.Controllers;
 
 [Authorize(Roles = "ADMIN,THERAPIST,STAFF")]
-public class AdminController : BaseApiController
+public class AdminController(IAdminService adminService) : BaseApiController
 {
-    private readonly IAdminService _adminService;
-
-    public AdminController(IAdminService adminService)
-    {
-        _adminService = adminService;
-    }
-
     [HttpGet("calendar")]
     public async Task<ActionResult<ApiResponse<List<AppointmentDto>>>> GetCalendar([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
     {
