@@ -44,6 +44,14 @@ public class AppointmentsController : BaseApiController
     }
 
     [Authorize]
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<AppointmentDto>>> UpdateAppointment(Guid id, [FromBody] UpdateAppointmentRequest request, CancellationToken ct)
+    {
+        var result = await _appointmentService.UpdateAppointmentAsync(id, request, ct);
+        return Success(result, "Appointment updated successfully");
+    }
+
+    [Authorize]
     [HttpPut("{id:guid}/cancel")]
     public async Task<ActionResult<ApiResponse<AppointmentDto>>> CancelAppointment(Guid id, CancellationToken ct)
     {

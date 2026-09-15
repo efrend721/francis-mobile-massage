@@ -14,6 +14,7 @@ public interface IAppointmentService {
     Task<DayAvailabilityDto> GetAvailabilityAsync(AvailabilityQuery query, CancellationToken ct = default);
     Task<AppointmentDto> CreateAppointmentAsync(CreateAppointmentRequest request, CancellationToken ct = default);
     Task<List<AppointmentDto>> GetMyAppointmentsAsync(CancellationToken ct = default);
+    Task<AppointmentDto> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentRequest request, CancellationToken ct = default);
     Task<AppointmentDto> CancelAppointmentAsync(Guid appointmentId, CancellationToken ct = default);
 }
 public interface IIntakeService {

@@ -5,15 +5,19 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  AlertCircle,
   Send,
-  User,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
 import { IntakeFormData } from '../types';
 import { BUSINESS_INFO } from '../data/content';
+import {
+  saveIntakeForm,
+  SaveIntakeFormRequest,
+  IntakeFormDto,
+} from '../services/intakeService';
 
 interface IntakeFormModalProps {
   isOpen: boolean;
@@ -40,7 +44,9 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
   const { user } = useAuth();
   const { location } = useLocation();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [savedIntake, setSavedIntake] = useState<IntakeFormDto | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<IntakeFormData>({
@@ -65,6 +71,21 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
     signatureName: initialData?.signatureName || user?.name || '',
     completedAt: '',
   });
+
+  // Sync initialData or user info
+  useEffect(() => {
+    if (initialData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+        fullName: initialData.fullName || prev.fullName,
+        phone: initialData.phone || prev.phone,
+        email: initialData.email || prev.email,
+        calgaryQuadrant: initialData.calgaryQuadrant || prev.calgaryQuadrant,
+        signatureName: initialData.signatureName || initialData.fullName || prev.signatureName,
+      }));
+    }
+  }, [initialData]);
 
   // Sync user info when modal opens or user logs in
   useEffect(() => {
@@ -102,7 +123,7 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
     });
   };
 
-  const handleNext = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleNext = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (step === 1) {
       if (!formData.fullName.trim() || !formData.phone.trim()) {
@@ -117,7 +138,83 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
         alert('Please accept the informed consent and cancellation policy to proceed.');
         return;
       }
-      // Finish and record completion
+
+      setIsSubmitting(true);
+
+      // Map Pressure Preference
+      const pressureMap: Record<string, number> = {
+        light: 1,
+        medium: 2,
+        firm: 3,
+        deep: 4,
+      };
+      const pressureLevelId = pressureMap[formData.pressurePreference] || 2;
+
+      // Map Aromatherapy Preference
+      const aromaMap: Record<string, number> = {
+        unscented: 1,
+        eucalyptus: 2,
+        lavender: 3,
+      };
+      const aromatherapyId = aromaMap[formData.aromatherapyPreference] || 2;
+
+      // Map Focus Areas to IDs
+      const focusMap: Record<string, number[]> = {
+        'Neck & Shoulders': [1, 2],
+        'Upper Back & Trapezius': [3],
+        'Lower Back & Lumbar': [4],
+        'Arms, Wrists & Hands': [5],
+        'Sciatica & Glutes': [6],
+        'Legs & Calves': [7],
+        'Feet & Ankles': [7],
+        'Full Body Relaxation': [8],
+      };
+
+      const focusAreaIds = new Set<number>();
+      formData.focusAreas.forEach((area) => {
+        const ids = focusMap[area] || [8];
+        ids.forEach((id) => focusAreaIds.add(id));
+      });
+
+      const focusAreasPayload = Array.from(focusAreaIds).map((id) => ({
+        focusAreaId: id,
+        painLevel: 5,
+      }));
+
+      const requestPayload: SaveIntakeFormRequest = {
+        pressureLevelId,
+        aromatherapyId,
+        isFirstVisit: formData.isFirstVisit,
+        hasHighBloodPressure: formData.hasHighBloodPressure,
+        isPregnant: formData.isPregnant,
+        pregnancyWeeks: formData.pregnancyWeeks || undefined,
+        hasRecentSurgeriesOrInjuries: formData.hasRecentSurgeriesOrInjuries,
+        surgeriesDetails: formData.surgeriesDetails || undefined,
+        hasAllergiesToOilsOrNuts: formData.hasAllergiesToOilsOrNuts,
+        allergiesDetails: formData.allergiesDetails || undefined,
+        otherHealthNotes: formData.otherHealthNotes || undefined,
+        pipaConsentAccepted: formData.pipaConsentAccepted,
+        cancellationPolicyAccepted: formData.cancellationPolicyAccepted,
+        signatureName: formData.signatureName.trim() || formData.fullName.trim(),
+        focusAreas: focusAreasPayload,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        quadrantCode: formData.calgaryQuadrant,
+      };
+
+      try {
+        const res = await saveIntakeForm(requestPayload);
+        if (res && res.id) {
+          setSavedIntake(res);
+        }
+      } catch (err) {
+        console.warn('[IntakeFormModal] Backend persistence notice (continuing with client summary):', err);
+      }
+
+      setIsSubmitting(false);
+
+      // Finish and record completion timestamp
       const completedData = {
         ...formData,
         completedAt: new Date().toLocaleDateString('en-CA', {
@@ -135,29 +232,32 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
   };
 
   const handleSendViaWhatsApp = () => {
-    const message = `🌿 *FORM - Digital Health Intake Form Summary*
+    const intakeRef = savedIntake ? `#INTAKE-${savedIntake.id.slice(0, 8).toUpperCase()}` : '#INTAKE-CALGARY';
+
+    const message = `🌿 *FORM - Digital Clinical Intake Summary*
+📋 *Intake Ref:* ${intakeRef}
 👤 *Client:* ${formData.fullName}
 📞 *Phone:* ${formData.phone}
 📧 *Email:* ${formData.email || 'N/A'}
-📍 *Calgary Area:* ${formData.calgaryQuadrant} (${formData.isFirstVisit ? 'First Visit' : 'Returning Client'})
+📍 *Calgary Quadrant:* ${formData.calgaryQuadrant} (${formData.isFirstVisit ? 'First Visit' : 'Returning Client'})
 
 🎯 *Focus Areas:*
 ${formData.focusAreas.length > 0 ? formData.focusAreas.map((a) => `• ${a}`).join('\n') : '• General full body relaxation'}
 
 🩺 *Health History:*
-• High/Low BP: ${formData.hasHighBloodPressure ? 'Yes' : 'No'}
+• High/Low Blood Pressure: ${formData.hasHighBloodPressure ? 'Yes' : 'No'}
 • Pregnant: ${formData.isPregnant ? `Yes (${formData.pregnancyWeeks || 'weeks not specified'})` : 'No'}
 • Recent Surgeries/Injuries: ${formData.hasRecentSurgeriesOrInjuries ? `Yes (${formData.surgeriesDetails})` : 'No'}
-• Allergies: ${formData.hasAllergiesToOilsOrNuts ? `Yes (${formData.allergiesDetails})` : 'No'}
-${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes}` : ''}
+• Allergies to Oils/Nuts: ${formData.hasAllergiesToOilsOrNuts ? `Yes (${formData.allergiesDetails})` : 'No'}
+${formData.otherHealthNotes ? `• Additional Health Notes: ${formData.otherHealthNotes}` : ''}
 
-💆 *Preferences:*
-• Pressure: ${formData.pressurePreference.toUpperCase()}
-• Aromatherapy: ${formData.aromatherapyPreference.toUpperCase()}
+💆 *Session Preferences:*
+• Pressure Level: ${formData.pressurePreference.toUpperCase()}
+• Aromatherapy Oil: ${formData.aromatherapyPreference.toUpperCase()}
 ✅ *PIPA Alberta Consent & 24h Policy Signed by:* ${formData.signatureName || formData.fullName}`;
 
     const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -249,54 +349,37 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
         <div className="p-4 sm:p-7 overflow-y-auto flex-1 space-y-6">
           {/* STEP 1: Profile & Contact */}
           {step === 1 && (
-            <form id="intake-step-1" onSubmit={handleNext} className="space-y-4 sm:space-y-5">
-              {user?.isGoogleUser && (
-                <div className="flex items-center gap-3 p-3 bg-botanical-light/60 border border-botanical/30 rounded-xl text-xs sm:text-sm text-charcoal">
-                  {user.picture ? (
-                    <img
-                      src={user.picture}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full border border-botanical shrink-0"
-                    />
-                  ) : (
-                    <User className="w-6 h-6 text-botanical shrink-0" />
-                  )}
-                  <div>
-                    <span className="font-semibold text-botanical block">Verified with Google:</span>
-                    <span>
-                      {user.name.split(' ')[0]} {user.name.split(' ').length > 1 ? `${user.name.split(' ').slice(-1)[0].charAt(0)}.` : ''}
-                    </span>
-                  </div>
-                </div>
-              )}
+            <form id="intake-step-1" onSubmit={handleNext} className="space-y-4">
+              <div className="space-y-1 mb-4">
+                <h3 className="font-serif text-base sm:text-lg font-bold text-charcoal">
+                  1. Client Identification & Calgary Area
+                </h3>
+                <p className="text-xs text-glacier">
+                  Required for direct billing receipts and in-home appointment dispatch.
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="intake-full-name"
-                    className="block text-xs sm:text-sm font-semibold text-charcoal mb-1"
-                  >
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="intake-full-name"
-                    name="intakeFullName"
-                    autoComplete="name"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. Sarah Miller"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-sm text-charcoal transition-all"
-                  />
-                </div>
+              <div>
+                <label htmlFor="intake-full-name" className="block text-xs font-semibold text-charcoal mb-1">
+                  Full Legal Name *
+                </label>
+                <input
+                  type="text"
+                  id="intake-full-name"
+                  name="intakeFullName"
+                  autoComplete="name"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="e.g. Sarah Miller"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs sm:text-sm text-charcoal"
+                />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label
-                    htmlFor="intake-phone"
-                    className="block text-xs sm:text-sm font-semibold text-charcoal mb-1"
-                  >
-                    Phone / WhatsApp Number <span className="text-red-500">*</span>
+                  <label htmlFor="intake-phone" className="block text-xs font-semibold text-charcoal mb-1">
+                    Phone / Mobile (WhatsApp) *
                   </label>
                   <input
                     type="tel"
@@ -306,341 +389,319 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="e.g. +1 (403) 555-0199"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-sm text-charcoal transition-all"
+                    placeholder="e.g. 403-555-0199"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs sm:text-sm text-charcoal"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label
-                    htmlFor="intake-email"
-                    className="block text-xs sm:text-sm font-semibold text-charcoal mb-1"
-                  >
-                    Email Address <span className="text-glacier text-xs font-normal">(For receipts)</span>
+                  <label htmlFor="intake-email" className="block text-xs font-semibold text-charcoal mb-1">
+                    Email Address (For RMT Insurance Receipt) *
                   </label>
                   <input
                     type="email"
                     id="intake-email"
                     name="intakeEmail"
                     autoComplete="email"
+                    required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="e.g. sarah@example.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-sm text-charcoal transition-all"
+                    placeholder="sarah@example.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs sm:text-sm text-charcoal"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label
-                    htmlFor="intake-quadrant"
-                    className="block text-xs sm:text-sm font-semibold text-charcoal mb-1"
-                  >
-                    Calgary Service Quadrant <span className="text-red-500">*</span>
+                  <label htmlFor="intake-quadrant" className="block text-xs font-semibold text-charcoal mb-1">
+                    Calgary Location / Quadrant *
                   </label>
                   <select
                     id="intake-quadrant"
                     name="intakeQuadrant"
                     value={formData.calgaryQuadrant}
                     onChange={(e) => setFormData({ ...formData, calgaryQuadrant: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-sm text-charcoal transition-all cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs sm:text-sm text-charcoal cursor-pointer"
                   >
-                    <option value="SW">Southwest Calgary (SW)</option>
-                    <option value="NW">Northwest Calgary (NW)</option>
-                    <option value="SE">Southeast Calgary (SE)</option>
-                    <option value="NE">Northeast Calgary (NE)</option>
-                    <option value="Airdrie">Airdrie & Surrounding Area</option>
+                    <option value="NW">Northwest (NW Calgary)</option>
+                    <option value="SW">Southwest (SW Calgary)</option>
+                    <option value="SE">Southeast (SE Calgary)</option>
+                    <option value="NE">Northeast (NE Calgary)</option>
+                    <option value="DOWNTOWN">Downtown / Beltline</option>
+                    <option value="SURROUNDING">Surrounding Area (Airdrie, Cochrane, etc.)</option>
                   </select>
                 </div>
-              </div>
 
-              {/* First Visit Toggle with strict accessible radios/buttons */}
-              <div className="p-3.5 bg-pearl rounded-xl border border-oak/30">
-                <span className="block text-xs sm:text-sm font-semibold text-charcoal mb-2">
-                  Is this your first mobile massage session with Francis?
-                </span>
-                <div className="flex gap-4">
-                  <label
-                    htmlFor="first-visit-yes"
-                    className="flex items-center gap-2 text-xs sm:text-sm text-charcoal cursor-pointer font-medium"
-                  >
-                    <input
-                      type="radio"
-                      id="first-visit-yes"
-                      name="isFirstVisitRadio"
-                      checked={formData.isFirstVisit === true}
-                      onChange={() => setFormData({ ...formData, isFirstVisit: true })}
-                      className="w-4 h-4 text-nordic-mist focus:ring-nordic-mist"
-                    />
-                    <span>Yes, first session</span>
-                  </label>
-
-                  <label
-                    htmlFor="first-visit-no"
-                    className="flex items-center gap-2 text-xs sm:text-sm text-charcoal cursor-pointer font-medium"
-                  >
-                    <input
-                      type="radio"
-                      id="first-visit-no"
-                      name="isFirstVisitRadio"
-                      checked={formData.isFirstVisit === false}
-                      onChange={() => setFormData({ ...formData, isFirstVisit: false })}
-                      className="w-4 h-4 text-nordic-mist focus:ring-nordic-mist"
-                    />
-                    <span>No, returning client</span>
-                  </label>
+                <div>
+                  <span className="block text-xs font-semibold text-charcoal mb-1">
+                    Visit Status
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 h-[42px]">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, isFirstVisit: true })}
+                      className={`rounded-xl text-xs font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+                        formData.isFirstVisit
+                          ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
+                          : 'bg-white text-charcoal border-oak/40 hover:bg-pearl/50'
+                      }`}
+                    >
+                      <span>First Visit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, isFirstVisit: false })}
+                      className={`rounded-xl text-xs font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+                        !formData.isFirstVisit
+                          ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
+                          : 'bg-white text-charcoal border-oak/40 hover:bg-pearl/50'
+                      }`}
+                    >
+                      <span>Returning</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </form>
           )}
 
-          {/* STEP 2: Health Focus & Medical History */}
+          {/* STEP 2: Health History & Focus Areas */}
           {step === 2 && (
-            <form id="intake-step-2" onSubmit={handleNext} className="space-y-5 sm:space-y-6">
-              {/* Focus Areas Interactive Chips */}
+            <form id="intake-step-2" onSubmit={handleNext} className="space-y-5">
+              <div className="space-y-1">
+                <h3 className="font-serif text-base sm:text-lg font-bold text-charcoal">
+                  2. Priority Focus Areas & Health History
+                </h3>
+                <p className="text-xs text-glacier">
+                  Select where you feel pain, stiffness, or postural fatigue.
+                </p>
+              </div>
+
+              {/* Body Focus Chips */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-charcoal mb-1">
-                  Primary Areas of Tension or Pain <span className="text-glacier font-normal">(Select all that apply)</span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                <span className="block text-xs font-semibold text-charcoal mb-2">
+                  Select Areas Requiring Special Attention:
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {BODY_FOCUS_OPTIONS.map((area) => {
                     const isSelected = formData.focusAreas.includes(area);
-                    const chipId = `chip-${area.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
                     return (
                       <button
                         key={area}
                         type="button"
-                        id={chipId}
                         onClick={() => toggleFocusArea(area)}
-                        className={`p-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all text-left flex items-center justify-between min-h-11 cursor-pointer ${
+                        className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all flex items-center justify-between cursor-pointer ${
                           isSelected
-                            ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
-                            : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
+                            ? 'bg-botanical-light border-botanical text-botanical-dark font-semibold shadow-xs'
+                            : 'bg-white border-oak/30 text-charcoal hover:bg-pearl/40'
                         }`}
                       >
-                        <span className="leading-tight">{area}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-oak-light shrink-0 ml-1" />}
+                        <span>{area}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-botanical shrink-0" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Health Contraindications & Alerts */}
-              <div className="space-y-3 pt-2">
-                <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-charcoal">
-                  <AlertCircle className="w-4 h-4 text-oak" />
-                  Health & Medical Background (Confidential)
+              {/* Health Contraindications */}
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <span className="block text-xs font-semibold text-charcoal">
+                  Medical Screening (Required for RMT Safety):
                 </span>
 
-                {/* Blood Pressure */}
-                <div className="p-3 bg-pearl rounded-xl border border-gray-200 flex items-center justify-between gap-3">
-                  <label htmlFor="intake-bp-toggle" className="text-xs sm:text-sm text-charcoal cursor-pointer flex-1">
-                    Do you have high/low blood pressure or cardiac conditions?
-                  </label>
-                  <input
-                    type="checkbox"
-                    id="intake-bp-toggle"
-                    name="intakeBpToggle"
-                    checked={formData.hasHighBloodPressure}
-                    onChange={(e) => setFormData({ ...formData, hasHighBloodPressure: e.target.checked })}
-                    className="w-5 h-5 rounded-md text-nordic-mist focus:ring-nordic-mist cursor-pointer shrink-0"
-                  />
-                </div>
+                <div className="space-y-2 bg-pearl/60 p-3.5 rounded-xl border border-oak/20">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="intake-bp" className="text-xs text-charcoal cursor-pointer">
+                      High or Uncontrolled Blood Pressure?
+                    </label>
+                    <input
+                      type="checkbox"
+                      id="intake-bp"
+                      name="intakeBp"
+                      checked={formData.hasHighBloodPressure}
+                      onChange={(e) => setFormData({ ...formData, hasHighBloodPressure: e.target.checked })}
+                      className="w-4 h-4 rounded-md text-botanical focus:ring-botanical cursor-pointer"
+                    />
+                  </div>
 
-                {/* Pregnancy */}
-                <div className="p-3 bg-pearl rounded-xl border border-gray-200 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="intake-pregnancy-toggle" className="text-xs sm:text-sm text-charcoal cursor-pointer flex-1">
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-200/60">
+                    <label htmlFor="intake-pregnant" className="text-xs text-charcoal cursor-pointer">
                       Are you currently pregnant?
                     </label>
                     <input
                       type="checkbox"
-                      id="intake-pregnancy-toggle"
-                      name="intakePregnancyToggle"
+                      id="intake-pregnant"
+                      name="intakePregnant"
                       checked={formData.isPregnant}
                       onChange={(e) => setFormData({ ...formData, isPregnant: e.target.checked })}
-                      className="w-5 h-5 rounded-md text-nordic-mist focus:ring-nordic-mist cursor-pointer shrink-0"
+                      className="w-4 h-4 rounded-md text-botanical focus:ring-botanical cursor-pointer"
                     />
                   </div>
+
                   {formData.isPregnant && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <label htmlFor="intake-pregnancy-weeks" className="block text-xs font-semibold text-charcoal mb-1">
-                        Estimated Gestational Weeks:
-                      </label>
+                    <div className="pt-2">
                       <input
                         type="text"
-                        id="intake-pregnancy-weeks"
                         name="intakePregnancyWeeks"
+                        placeholder="Number of weeks (e.g. 24 weeks)"
                         value={formData.pregnancyWeeks}
                         onChange={(e) => setFormData({ ...formData, pregnancyWeeks: e.target.value })}
-                        placeholder="e.g. 24 weeks"
-                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs text-charcoal"
+                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white text-xs text-charcoal"
                       />
                     </div>
                   )}
-                </div>
 
-                {/* Recent Surgeries or Injuries */}
-                <div className="p-3 bg-pearl rounded-xl border border-gray-200 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="intake-surgery-toggle" className="text-xs sm:text-sm text-charcoal cursor-pointer flex-1">
-                      Any recent surgeries, fractures, or acute joint injuries?
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-200/60">
+                    <label htmlFor="intake-allergies" className="text-xs text-charcoal cursor-pointer">
+                      Allergies to massage oils, nuts, or scents?
                     </label>
                     <input
                       type="checkbox"
-                      id="intake-surgery-toggle"
-                      name="intakeSurgeryToggle"
-                      checked={formData.hasRecentSurgeriesOrInjuries}
-                      onChange={(e) => setFormData({ ...formData, hasRecentSurgeriesOrInjuries: e.target.checked })}
-                      className="w-5 h-5 rounded-md text-nordic-mist focus:ring-nordic-mist cursor-pointer shrink-0"
-                    />
-                  </div>
-                  {formData.hasRecentSurgeriesOrInjuries && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <label htmlFor="intake-surgery-details" className="block text-xs font-semibold text-charcoal mb-1">
-                        Please specify injury or surgery & date:
-                      </label>
-                      <input
-                        type="text"
-                        id="intake-surgery-details"
-                        name="intakeSurgeryDetails"
-                        value={formData.surgeriesDetails}
-                        onChange={(e) => setFormData({ ...formData, surgeriesDetails: e.target.value })}
-                        placeholder="e.g. Right knee arthroscopy 6 months ago"
-                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs text-charcoal"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Allergies */}
-                <div className="p-3 bg-pearl rounded-xl border border-gray-200 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="intake-allergy-toggle" className="text-xs sm:text-sm text-charcoal cursor-pointer flex-1">
-                      Allergies to massage oils, nuts (almond oil), or fragrances?
-                    </label>
-                    <input
-                      type="checkbox"
-                      id="intake-allergy-toggle"
-                      name="intakeAllergyToggle"
+                      id="intake-allergies"
+                      name="intakeAllergies"
                       checked={formData.hasAllergiesToOilsOrNuts}
                       onChange={(e) => setFormData({ ...formData, hasAllergiesToOilsOrNuts: e.target.checked })}
-                      className="w-5 h-5 rounded-md text-nordic-mist focus:ring-nordic-mist cursor-pointer shrink-0"
+                      className="w-4 h-4 rounded-md text-botanical focus:ring-botanical cursor-pointer"
                     />
                   </div>
+
                   {formData.hasAllergiesToOilsOrNuts && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <label htmlFor="intake-allergy-details" className="block text-xs font-semibold text-charcoal mb-1">
-                        Please specify allergies:
-                      </label>
+                    <div className="pt-2">
                       <input
                         type="text"
-                        id="intake-allergy-details"
-                        name="intakeAllergyDetails"
+                        name="intakeAllergiesDetails"
+                        placeholder="List specific allergies (e.g. Almond oil, Lavender)"
                         value={formData.allergiesDetails}
                         onChange={(e) => setFormData({ ...formData, allergiesDetails: e.target.value })}
-                        placeholder="e.g. Nut allergy (use organic jojoba or grapeseed oil only)"
-                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white focus:ring-2 focus:ring-nordic-mist focus:outline-hidden text-xs text-charcoal"
+                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white text-xs text-charcoal"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-200/60">
+                    <label htmlFor="intake-surgeries" className="text-xs text-charcoal cursor-pointer">
+                      Recent surgeries, fractures, or acute injuries?
+                    </label>
+                    <input
+                      type="checkbox"
+                      id="intake-surgeries"
+                      name="intakeSurgeries"
+                      checked={formData.hasRecentSurgeriesOrInjuries}
+                      onChange={(e) => setFormData({ ...formData, hasRecentSurgeriesOrInjuries: e.target.checked })}
+                      className="w-4 h-4 rounded-md text-botanical focus:ring-botanical cursor-pointer"
+                    />
+                  </div>
+
+                  {formData.hasRecentSurgeriesOrInjuries && (
+                    <div className="pt-2">
+                      <input
+                        type="text"
+                        name="intakeSurgeriesDetails"
+                        placeholder="Specify surgery/injury and approximate date"
+                        value={formData.surgeriesDetails}
+                        onChange={(e) => setFormData({ ...formData, surgeriesDetails: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-oak/40 bg-white text-xs text-charcoal"
                       />
                     </div>
                   )}
                 </div>
               </div>
+
+              <div>
+                <label htmlFor="intake-notes" className="block text-xs font-semibold text-charcoal mb-1">
+                  Other Health Conditions or Notes for Francis:
+                </label>
+                <textarea
+                  id="intake-notes"
+                  name="intakeOtherNotes"
+                  rows={2}
+                  value={formData.otherHealthNotes}
+                  onChange={(e) => setFormData({ ...formData, otherHealthNotes: e.target.value })}
+                  placeholder="e.g. Sciatica on right leg, tension headaches after work..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-oak/40 bg-white text-xs text-charcoal resize-none focus:ring-2 focus:ring-nordic-mist focus:outline-hidden"
+                />
+              </div>
             </form>
           )}
 
-          {/* STEP 3: Preferences & Informed Consent */}
+          {/* STEP 3: Preferences & Alberta PIPA Consent */}
           {step === 3 && (
-            <form id="intake-step-3" onSubmit={handleNext} className="space-y-5 sm:space-y-6">
-              {/* Pressure Level Preference */}
+            <form id="intake-step-3" onSubmit={handleNext} className="space-y-4">
+              <div className="space-y-1">
+                <h3 className="font-serif text-base sm:text-lg font-bold text-charcoal">
+                  3. Session Customization & Informed Consent
+                </h3>
+                <p className="text-xs text-glacier">
+                  Set your pressure and aromatherapy choices, then electronically sign your consent.
+                </p>
+              </div>
+
+              {/* Pressure Selector */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-charcoal mb-1">
-                  Preferred Massage Pressure:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-                  {[
-                    { id: 'light', label: 'Light', desc: 'Gentle & Soothing' },
-                    { id: 'medium', label: 'Medium', desc: 'Balanced Relief' },
-                    { id: 'firm', label: 'Firm', desc: 'Moderate Deep' },
-                    { id: 'deep', label: 'Deep Tissue', desc: 'Maximum Tension' },
-                  ].map((p) => {
-                    const isSelected = formData.pressurePreference === p.id;
-                    const pressureButtonId = `pressure-pref-${p.id}`;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        id={pressureButtonId}
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            pressurePreference: p.id as 'light' | 'medium' | 'firm' | 'deep',
-                          })
-                        }
-                        className={`p-3 rounded-xl border text-left transition-all min-h-11 cursor-pointer ${
-                          isSelected
-                            ? 'bg-nordic-mist text-white border-nordic-mist shadow-xs'
-                            : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
-                        }`}
-                      >
-                        <span className="font-bold text-xs sm:text-sm block">{p.label}</span>
-                        <span className={`text-[11px] block mt-0.5 ${isSelected ? 'text-oak-light' : 'text-glacier'}`}>
-                          {p.desc}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <span className="block text-xs font-semibold text-charcoal mb-2">
+                  Desired Massage Pressure:
+                </span>
+                <div className="grid grid-cols-4 gap-2">
+                  {(
+                    [
+                      { id: 'light', label: 'Light', desc: 'Gentle & Relaxing' },
+                      { id: 'medium', label: 'Medium', desc: 'Balanced Stress Relief' },
+                      { id: 'firm', label: 'Firm', desc: 'Therapeutic Tension' },
+                      { id: 'deep', label: 'Deep', desc: 'Deep Tissue / Fascia' },
+                    ] as const
+                  ).map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, pressurePreference: p.id })}
+                      className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                        formData.pressurePreference === p.id
+                          ? 'bg-nordic-mist text-white border-nordic-mist font-bold shadow-xs'
+                          : 'bg-white border-oak/40 text-charcoal hover:bg-pearl/40'
+                      }`}
+                    >
+                      <span className="block text-xs">{p.label}</span>
+                      <span className={`text-[10px] hidden sm:block ${formData.pressurePreference === p.id ? 'text-pearl/90' : 'text-glacier'}`}>
+                        {p.desc}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Aromatherapy Preference */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-charcoal mb-1">
-                  Complimentary Botanical Aromatherapy:
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                  {[
-                    { id: 'eucalyptus', label: '🌿 Pure Eucalyptus', desc: 'Invigorating & Airway Clearing' },
-                    { id: 'lavender', label: '🌸 French Lavender', desc: 'Calming & Deep Sleep' },
-                    { id: 'unscented', label: '💧 Unscented', desc: 'Pure Organic Hypoallergenic Oil' },
-                  ].map((a) => {
-                    const isSelected = formData.aromatherapyPreference === a.id;
-                    const aromaButtonId = `aroma-pref-${a.id}`;
-                    return (
-                      <button
-                        key={a.id}
-                        type="button"
-                        id={aromaButtonId}
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            aromatherapyPreference: a.id as 'eucalyptus' | 'lavender' | 'unscented',
-                          })
-                        }
-                        className={`p-3 rounded-xl border text-left transition-all min-h-11 cursor-pointer ${
-                          isSelected
-                            ? 'bg-botanical text-white border-botanical shadow-xs'
-                            : 'bg-pearl/80 hover:bg-pearl text-charcoal border-gray-200'
-                        }`}
-                      >
-                        <span className="font-bold text-xs sm:text-sm block">{a.label}</span>
-                        <span className={`text-[11px] block mt-0.5 ${isSelected ? 'text-pearl/90' : 'text-glacier'}`}>
-                          {a.desc}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <span className="block text-xs font-semibold text-charcoal mb-2">
+                  Complimentary Organic Aromatherapy:
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      { id: 'eucalyptus', label: '🌿 Eucalyptus & Pine', desc: 'Clearing & Revitalizing' },
+                      { id: 'lavender', label: '💜 French Lavender', desc: 'Calming & Restorative' },
+                      { id: 'unscented', label: '💧 Pure Unscented', desc: 'Hypoallergenic carrier oil' },
+                    ] as const
+                  ).map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, aromatherapyPreference: a.id })}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        formData.aromatherapyPreference === a.id
+                          ? 'bg-botanical-light border-botanical text-botanical-dark font-bold shadow-xs'
+                          : 'bg-white border-oak/40 text-charcoal hover:bg-pearl/40'
+                      }`}
+                    >
+                      <span className="block text-xs">{a.label}</span>
+                      <span className="text-[10px] text-glacier hidden sm:block">{a.desc}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Alberta PIPA Consent & Policies with Strict HTML Accessibility */}
-              <div className="p-4 bg-botanical-light/50 border border-botanical/30 rounded-2xl space-y-3">
-                <span className="text-xs font-bold text-botanical uppercase tracking-wider block">
-                  Alberta PIPA Informed Consent & Policy Acknowledgement
-                </span>
-
+              {/* Legal & PIPA Consent Box */}
+              <div className="bg-pearl/70 p-4 rounded-2xl border border-oak/30 space-y-3 mt-3">
                 <div className="flex items-start gap-2.5">
                   <input
                     type="checkbox"
@@ -703,10 +764,19 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
                 <CheckCircle2 className="w-8 h-8" />
               </div>
 
-              <div>
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1 bg-botanical-light text-botanical-dark font-bold text-xs px-3 py-1 rounded-full border border-botanical/20">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {savedIntake ? 'Saved in Azure SQL Database' : 'Confidential Record Ready'}
+                </span>
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-charcoal">
-                  Health Intake Form Ready!
+                  Health Intake Form Successfully Recorded!
                 </h3>
+                {savedIntake && (
+                  <p className="text-xs font-mono text-nordic-mist font-semibold">
+                    Clinical Ref: #{savedIntake.id.slice(0, 8).toUpperCase()}
+                  </p>
+                )}
                 <p className="text-glacier text-xs sm:text-sm mt-1 max-w-md mx-auto">
                   Thank you, <strong>{formData.fullName}</strong>. Francis now has your health focus and session preferences on file for your Calgary appointment.
                 </p>
@@ -779,10 +849,20 @@ ${formData.otherHealthNotes ? `• Additional Notes: ${formData.otherHealthNotes
             <button
               type="submit"
               form={`intake-step-${step}`}
-              className="flex items-center gap-2 py-2.5 px-5 sm:px-6 rounded-xl bg-nordic-mist hover:bg-nordic-slate text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 py-2.5 px-5 sm:px-6 rounded-xl bg-nordic-mist hover:bg-nordic-slate text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-75"
             >
-              <span>{step === 3 ? 'Complete & Sign Intake Form' : 'Next Step'}</span>
-              <ArrowRight className="w-4 h-4" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-oak" />
+                  <span>Submitting Clinical Intake...</span>
+                </>
+              ) : (
+                <>
+                  <span>{step === 3 ? 'Complete & Sign Intake Form' : 'Next Step'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         )}

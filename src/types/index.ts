@@ -1,5 +1,6 @@
 export interface ServiceItem {
   id: string;
+  numericId?: number;
   title: string;
   tagline: string;
   description: string;

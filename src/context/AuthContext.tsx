@@ -1,16 +1,31 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser } from '../types';
+import { fetchApi, AUTH_TOKEN_KEY } from '../services/apiClient';
 
 interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  loginWithGoogleCredential: (credential: string) => void;
+  loginWithGoogleCredential: (credential: string) => Promise<void>;
   loginWithGooglePopup: () => Promise<void>;
   loginAsGuest: (name: string, email: string) => void;
   logout: () => void;
   isAuthModalOpen: boolean;
   openAuthModal: (intendedAction?: () => void) => void;
   closeAuthModal: () => void;
+}
+
+interface BackendAuthResponse {
+  token: string;
+  expiresAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    picture?: string;
+    phone?: string;
+    role: string;
+    isGoogleUser: boolean;
+  };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,7 +100,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.body.appendChild(script);
   }, []);
 
-  const loginWithGoogleCredential = (credential: string) => {
+  const loginWithGoogleCredential = async (credential: string): Promise<void> => {
+    try {
+      // 1. Authenticate with backend API to register/update in Azure SQL and obtain JWT
+      const authRes = await fetchApi<BackendAuthResponse>('auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ idToken: credential }),
+      });
+
+      if (authRes && authRes.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, authRes.token);
+        const backendUser: AuthUser = {
+          id: authRes.user.id,
+          name: authRes.user.name,
+          email: authRes.user.email,
+          picture: authRes.user.picture,
+          isGoogleUser: true,
+        };
+        setUser(backendUser);
+        setIsAuthModalOpen(false);
+        if (pendingAction) {
+          pendingAction();
+          setPendingAction(null);
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn('[AuthContext] Backend Google token exchange notice (using client token fallback):', err);
+    }
+
+    // Fallback: parse client-side if offline or backend unavailable
     const payload = parseJwt(credential);
     if (payload) {
       const newUser: AuthUser = {
@@ -118,7 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
               if (tokenResponse.access_token) {
                 try {
-                  // Fetch basic profile with user access token
                   const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                   });
@@ -130,6 +173,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     picture: profile.picture,
                     isGoogleUser: true,
                   };
+
+                  // If we have dev token simulation or idToken, sync with backend
+                  try {
+                    const authRes = await fetchApi<BackendAuthResponse>('auth/google', {
+                      method: 'POST',
+                      body: JSON.stringify({ idToken: `dev-mock-google:${profile.email}:${profile.name}` }),
+                    });
+                    if (authRes && authRes.token) {
+                      localStorage.setItem(AUTH_TOKEN_KEY, authRes.token);
+                      googleUser.id = authRes.user.id;
+                    }
+                  } catch {
+                    // Fallback
+                  }
+
                   setUser(googleUser);
                   setIsAuthModalOpen(false);
                   if (pendingAction) {
@@ -138,7 +196,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   }
                   resolve();
                 } catch {
-                  // Fallback
                   resolve();
                 }
               }
@@ -155,24 +212,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Fallback for dev / localhost simulation if origins are not matched
             simulateDevGoogleLogin(resolve);
           }
         });
         return;
       }
 
-      // Local fallback if offline
       simulateDevGoogleLogin(resolve);
     });
   };
 
-  const simulateDevGoogleLogin = (resolve: () => void) => {
+  const simulateDevGoogleLogin = async (resolve: () => void) => {
+    try {
+      const authRes = await fetchApi<BackendAuthResponse>('auth/dev-login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'efrend721@gmail.com',
+          name: 'Ervis Morales',
+          role: 'CLIENT',
+        }),
+      });
+
+      if (authRes && authRes.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, authRes.token);
+        const demoUser: AuthUser = {
+          id: authRes.user.id,
+          name: authRes.user.name,
+          email: authRes.user.email,
+          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+          isGoogleUser: true,
+        };
+        setUser(demoUser);
+        setIsAuthModalOpen(false);
+        if (pendingAction) {
+          pendingAction();
+          setPendingAction(null);
+        }
+        resolve();
+        return;
+      }
+    } catch {
+      // Fallback local simulation
+    }
+
     setTimeout(() => {
       const demoUser: AuthUser = {
         id: `google_${Date.now()}`,
-        name: 'Francis Client',
-        email: 'client@gmail.com',
+        name: 'Ervis Morales',
+        email: 'efrend721@gmail.com',
         picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
         isGoogleUser: true,
       };
@@ -183,7 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPendingAction(null);
       }
       resolve();
-    }, 400);
+    }, 300);
   };
 
   const loginAsGuest = (name: string, email: string) => {
@@ -202,6 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(null);
   };
 

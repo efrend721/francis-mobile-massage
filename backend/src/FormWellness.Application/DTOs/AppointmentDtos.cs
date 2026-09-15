@@ -13,6 +13,16 @@ public class CreateAppointmentRequest {
     public string? ClientPhone { get; set; }
 }
 
+public class UpdateAppointmentRequest {
+    public int? ServiceId { get; set; }
+    public int? DurationMinutes { get; set; }
+    public DateTimeOffset? ScheduledAt { get; set; }
+    public string? QuadrantCode { get; set; }
+    public string? ServiceAddress { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ClientSpecialNotes { get; set; }
+}
+
 public class AppointmentDto {
     public Guid Id { get; set; }
     public string ClientId { get; set; } = string.Empty;

@@ -15,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onBookNowClick, onOpenIntakeForm
   const navLinks = [
     { name: 'Home', href: '#hero' },
     { name: 'Services', href: '#services' },
+    { name: 'My Appointments', href: '#my-bookings' },
     { name: 'Testimonials', href: '#testimonials' },
     { name: 'About Us', href: '#about' },
     { name: 'FAQ', href: '#faq' },

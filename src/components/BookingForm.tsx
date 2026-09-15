@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar,
   Clock,
@@ -14,9 +14,16 @@ import {
   AlertCircle,
   ShieldCheck,
   Hash,
+  Loader2,
 } from 'lucide-react';
 import { SERVICES_DATA, BUSINESS_INFO } from '../data/content';
 import { getServices } from '../services/catalogService';
+import {
+  createAppointment,
+  getAvailability,
+  AppointmentDto,
+  TimeSlotDto,
+} from '../services/appointmentService';
 import { BookingFormData, IntakeFormData, ServiceItem } from '../types';
 import { BotanicalDecor } from './BotanicalDecor';
 import { useAuth } from '../context/AuthContext';
@@ -50,11 +57,77 @@ function formatPostalCodeInput(value: string): string {
   return cleaned;
 }
 
+// Map service string ID to Azure SQL numeric service ID
+function getNumericServiceId(service: ServiceItem): number {
+  if (service.numericId && service.numericId > 0) return service.numericId;
+  const fallbackMap: Record<string, number> = {
+    'swedish-relaxation': 1,
+    'deep-tissue': 2,
+    'hot-stone': 3,
+    'prenatal-massage': 4,
+    'aromatherapy-bliss': 5,
+    'trigger-point': 6,
+  };
+  return fallbackMap[service.id] || 1;
+}
+
+// Combine date and formatted time into an ISO 8601 UTC string
+function combineDateAndTimeToIso(dateStr: string, timeStr: string): string {
+  const targetDateStr = dateStr || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  let hours = 10;
+  let minutes = 0;
+
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+  if (match) {
+    hours = parseInt(match[1], 10);
+    minutes = parseInt(match[2], 10);
+    const meridiem = match[3]?.toUpperCase();
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+  }
+
+  const [year, month, day] = targetDateStr.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day, hours, minutes, 0);
+  return localDate.toISOString();
+}
+
 export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, onOpenIntakeForm }) => {
   const { user, loginWithGooglePopup } = useAuth();
-  const { setManualQuadrant } = useLocation();
+  const { location, setManualQuadrant } = useLocation();
   const [services, setServices] = useState<ServiceItem[]>(SERVICES_DATA);
 
+  // Default date: tomorrow
+  const defaultDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  const [formData, setFormData] = useState<BookingFormData>({
+    serviceId: preselectedServiceId || SERVICES_DATA[0].id,
+    duration: '60 min',
+    fullName: user?.name || '',
+    phone: '',
+    email: user?.email || '',
+    preferredDate: defaultDate,
+    preferredTime: '10:00 AM',
+    addressArea: '',
+    postalCode: '',
+    specialNotes: '',
+  });
+
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [postalError, setPostalError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [createdAppointment, setCreatedAppointment] = useState<AppointmentDto | null>(null);
+
+  // Slots availability state
+  const [availableSlots, setAvailableSlots] = useState<TimeSlotDto[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [isWorkingDay, setIsWorkingDay] = useState(true);
+
+  // Load services dynamically
   useEffect(() => {
     let isMounted = true;
     getServices().then((data) => {
@@ -67,29 +140,14 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     };
   }, []);
 
-  const [formData, setFormData] = useState<BookingFormData>({
-    serviceId: preselectedServiceId || SERVICES_DATA[0].id,
-    duration: '60 min',
-    fullName: user?.name || '',
-    phone: '',
-    email: user?.email || '',
-    preferredDate: '',
-    preferredTime: '10:00 AM',
-    addressArea: '',
-    postalCode: '',
-    specialNotes: '',
-  });
-
-  const [addressError, setAddressError] = useState<string | null>(null);
-  const [postalError, setPostalError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-
+  // Sync preselected service
   useEffect(() => {
     if (preselectedServiceId) {
       setFormData((prev) => ({ ...prev, serviceId: preselectedServiceId }));
     }
   }, [preselectedServiceId]);
 
+  // Sync authenticated user info
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -100,12 +158,63 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     }
   }, [user]);
 
-  const selectedService = services.find((s) => s.id === formData.serviceId) || services[0] || SERVICES_DATA[0];
+  // Query slot availability when date or duration changes
+  const fetchAvailability = useCallback(async (date: string, durationStr: string) => {
+    if (!date) return;
+    setIsLoadingSlots(true);
+    const durationMinutes = parseInt(durationStr, 10) || 60;
+    try {
+      const res = await getAvailability(date, durationMinutes);
+      setIsWorkingDay(res.isWorkingDay);
+      setAvailableSlots(res.slots || []);
+
+      // If current preferred time is not among available slots, select first available slot
+      if (res.slots && res.slots.length > 0) {
+        const isCurrentSlotAvailable = res.slots.some(
+          (s) => s.isAvailable && s.formattedTime.toLowerCase() === formData.preferredTime.toLowerCase()
+        );
+        if (!isCurrentSlotAvailable) {
+          const firstAvailable = res.slots.find((s) => s.isAvailable);
+          if (firstAvailable) {
+            setFormData((prev) => ({ ...prev, preferredTime: firstAvailable.formattedTime }));
+          }
+        }
+      }
+    } catch {
+      // Handled in service fallback
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  }, [formData.preferredTime]);
+
+  useEffect(() => {
+    if (formData.preferredDate) {
+      fetchAvailability(formData.preferredDate, formData.duration);
+    }
+  }, [formData.preferredDate, formData.duration, fetchAvailability]);
+
+  const selectedService = useMemo(() => {
+    return services.find((s) => s.id === formData.serviceId) || services[0] || SERVICES_DATA[0];
+  }, [services, formData.serviceId]);
 
   // Real-time Postal Code validation
-  const isPostalCodeValid = Boolean(formData.postalCode && CANADIAN_POSTAL_CODE_REGEX.test(formData.postalCode.trim()));
+  const isPostalCodeValid = Boolean(
+    formData.postalCode && CANADIAN_POSTAL_CODE_REGEX.test(formData.postalCode.trim())
+  );
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  // Infer Calgary quadrant code from address or context
+  const resolveQuadrantCode = (): string => {
+    const addr = formData.addressArea.toUpperCase();
+    if (addr.includes('NW')) return 'NW';
+    if (addr.includes('SW')) return 'SW';
+    if (addr.includes('SE')) return 'SE';
+    if (addr.includes('NE')) return 'NE';
+    if (addr.includes('DOWNTOWN') || addr.includes('BELTLINE')) return 'DOWNTOWN';
+    if (location.quadrant) return location.quadrant;
+    return 'NW';
+  };
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     let hasError = false;
@@ -140,21 +249,57 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
       return;
     }
 
+    setIsSubmitting(true);
+
+    const durationMinutes = parseInt(formData.duration, 10) || 60;
+    const scheduledAtIso = combineDateAndTimeToIso(formData.preferredDate, formData.preferredTime);
+    const numericServiceId = getNumericServiceId(selectedService);
+    const quadrantCode = resolveQuadrantCode();
+
+    let apptResult: AppointmentDto | null = null;
+    let appointmentRef = 'DIRECT-CALGARY';
+
+    try {
+      apptResult = await createAppointment({
+        serviceId: numericServiceId,
+        durationMinutes,
+        scheduledAt: scheduledAtIso,
+        quadrantCode,
+        serviceAddress: trimmedAddress,
+        postalCode: trimmedPostal.toUpperCase(),
+        clientSpecialNotes: formData.specialNotes.trim() || undefined,
+        clientName: formData.fullName.trim(),
+        clientEmail: formData.email.trim(),
+        clientPhone: formData.phone.trim(),
+      });
+
+      if (apptResult && apptResult.id) {
+        setCreatedAppointment(apptResult);
+        appointmentRef = `FW-${apptResult.id.slice(0, 8).toUpperCase()}`;
+      }
+    } catch (apiError) {
+      console.warn('[BookingForm] Backend API persistence notice (proceeding with WhatsApp dispatch):', apiError);
+    }
+
+    setIsSubmitting(false);
     setSubmitted(true);
 
-    // Create WhatsApp pre-filled message using clean lines and standard encoding
+    // Create WhatsApp message with booking confirmation reference
     const messageLines = [
-      'Hello Francis, I would like to book a mobile massage:',
-      `- *Service:* ${selectedService.title}`,
+      '🌿 *Hello Francis, I have booked a Mobile Massage Treatment!*',
+      `- *Booking Ref:* ${appointmentRef}`,
+      `- *Treatment:* ${selectedService.title}`,
       `- *Duration:* ${formData.duration}`,
-      `- *Name:* ${formData.fullName}`,
+      `- *Client Name:* ${formData.fullName}`,
       `- *Phone:* ${formData.phone}`,
       `- *Email:* ${formData.email}`,
       `- *Date & Time:* ${formData.preferredDate} at ${formData.preferredTime}`,
-      `- *Address:* ${formData.addressArea}`,
+      `- *Calgary Address:* ${formData.addressArea}`,
       `- *Postal Code:* ${formData.postalCode?.trim().toUpperCase()}`,
-      `- *Notes:* ${formData.specialNotes.trim() || 'None'}`
-    ];
+      `- *Quadrant:* ${quadrantCode}`,
+      formData.specialNotes.trim() ? `- *Special Notes:* ${formData.specialNotes.trim()}` : '',
+      '\n_Looking forward to your confirmation!_'
+    ].filter(Boolean);
 
     const message = messageLines.join('\n');
     const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
@@ -191,20 +336,33 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
             <div className="w-16 h-16 bg-botanical text-white rounded-full flex items-center justify-center mx-auto shadow-md">
               <CheckCircle className="w-8 h-8" />
             </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal">
-              Booking Request Prepared!
-            </h3>
+
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1 bg-botanical-light text-botanical-dark font-bold text-xs px-3 py-1 rounded-full border border-botanical/20">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {createdAppointment ? 'Confirmed in System • Azure SQL' : 'Direct WhatsApp Booking'}
+              </span>
+              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal">
+                Booking Request Successfully Submitted!
+              </h3>
+              {createdAppointment && (
+                <p className="text-xs sm:text-sm font-mono text-nordic-mist font-semibold">
+                  Reference Code: #{createdAppointment.id.slice(0, 8).toUpperCase()}
+                </p>
+              )}
+            </div>
+
             <p className="text-sm sm:text-base text-muted max-w-lg mx-auto">
-              Your appointment details have been formatted. WhatsApp will open with your customized request for instant confirmation with Francis.
+              Your appointment details have been secured. WhatsApp will open with your customized request for immediate coordination with Francis.
             </p>
 
             {onOpenIntakeForm && (
-              <div className="pt-2 max-w-md mx-auto p-4 bg-card-white rounded-2xl border border-oak/40 shadow-xs space-y-2">
+              <div className="pt-2 max-w-md mx-auto p-5 bg-card-white rounded-2xl border border-oak/40 shadow-xs space-y-3">
                 <span className="text-xs font-bold text-botanical uppercase tracking-wider block">
                   Next Step (Recommended)
                 </span>
-                <p className="text-xs text-glacier">
-                  Complete your digital health history now so Francis can arrive ready with tailored therapy.
+                <p className="text-xs text-glacier leading-relaxed">
+                  Complete your confidential digital health history now so Francis can prepare your customized treatment prior to arrival.
                 </p>
                 <button
                   type="button"
@@ -213,16 +371,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                       fullName: formData.fullName,
                       phone: formData.phone,
                       email: formData.email,
-                      calgaryQuadrant: formData.addressArea.toUpperCase().includes('NW')
-                        ? 'NW'
-                        : formData.addressArea.toUpperCase().includes('NE')
-                        ? 'NE'
-                        : formData.addressArea.toUpperCase().includes('SE')
-                        ? 'SE'
-                        : 'SW',
+                      calgaryQuadrant: resolveQuadrantCode(),
                     })
                   }
-                  className="w-full py-3 px-4 bg-nordic-mist hover:bg-nordic-slate text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 px-4 bg-nordic-mist hover:bg-nordic-slate text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FileText className="w-4 h-4 text-oak" />
                   <span>Open Digital Intake Form (1 Min)</span>
@@ -235,7 +387,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 type="button"
                 id="booking-reset-btn"
                 name="reset-booking"
-                onClick={() => setSubmitted(false)}
+                onClick={() => {
+                  setSubmitted(false);
+                  setCreatedAppointment(null);
+                }}
                 className="text-xs font-semibold text-nordic-mist underline underline-offset-4 hover:text-nordic-hover cursor-pointer"
               >
                 Submit another booking request
@@ -411,6 +566,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                   id="booking-date"
                   name="preferredDate"
                   required
+                  min={new Date().toISOString().split('T')[0]}
                   value={formData.preferredDate}
                   onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
                   onClick={(e) => {
@@ -426,32 +582,92 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               </div>
             </div>
 
-            {/* 7. Preferred Time */}
+            {/* 7. Preferred Time / Dynamic Slot Availability */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-6">
-              <label
-                htmlFor="booking-time"
-                className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
-              >
-                <Clock className="w-4 h-4 text-botanical shrink-0" />
-                <span>Preferred Time *</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="booking-time"
+                  className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
+                >
+                  <Clock className="w-4 h-4 text-botanical shrink-0" />
+                  <span>Preferred Time *</span>
+                </label>
+                {isLoadingSlots && (
+                  <span className="text-[10px] text-muted flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-botanical" /> Checking slots...
+                  </span>
+                )}
+              </div>
+
               <select
                 id="booking-time"
                 name="preferredTime"
                 value={formData.preferredTime}
                 onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer box-border"
+                className="w-full min-w-0 max-w-full bg-card-white border border-oak/40 rounded-xl px-4 h-12 text-sm text-charcoal focus:ring-2 focus:ring-nordic-mist focus:outline-none transition-all shadow-xs cursor-pointer box-border font-medium"
               >
-                <option>8:00 AM</option>
-                <option>10:00 AM</option>
-                <option>12:00 PM</option>
-                <option>2:00 PM</option>
-                <option>4:00 PM</option>
-                <option>6:00 PM</option>
+                {availableSlots && availableSlots.length > 0 ? (
+                  availableSlots.map((slot) => (
+                    <option
+                      key={slot.time}
+                      value={slot.formattedTime}
+                      disabled={!slot.isAvailable}
+                    >
+                      {slot.formattedTime} {slot.isAvailable ? '✓ (Available)' : `✗ (${slot.reasonUnavailable || 'Booked'})`}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="9:00 AM">9:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="12:00 PM">12:00 PM</option>
+                    <option value="2:00 PM">2:00 PM</option>
+                    <option value="3:30 PM">3:30 PM</option>
+                    <option value="5:00 PM">5:00 PM</option>
+                    <option value="6:30 PM">6:30 PM</option>
+                  </>
+                )}
               </select>
             </div>
 
-            {/* 8. Address Field (Wider / Expanded) */}
+            {/* Real-Time Available Slot Quick-Chips */}
+            {availableSlots && availableSlots.length > 0 && isWorkingDay && (
+              <div className="sm:col-span-12 -mt-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-semibold text-charcoal mr-1">Available Slots:</span>
+                  {availableSlots.map((slot) => {
+                    const isSelected = formData.preferredTime.toLowerCase() === slot.formattedTime.toLowerCase();
+                    if (!slot.isAvailable) {
+                      return (
+                        <span
+                          key={slot.time}
+                          className="text-[11px] px-2 py-1 rounded-md bg-gray-100 text-gray-400 line-through cursor-not-allowed border border-gray-200"
+                          title={slot.reasonUnavailable || 'Booked'}
+                        >
+                          {slot.formattedTime}
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={slot.time}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, preferredTime: slot.formattedTime })}
+                        className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-all border cursor-pointer ${
+                          isSelected
+                            ? 'bg-botanical text-white border-botanical shadow-xs scale-105'
+                            : 'bg-card-white hover:bg-botanical-light text-charcoal border-botanical/30'
+                        }`}
+                      >
+                        {slot.formattedTime}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 8. Address Field */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-7 lg:col-span-8">
               <div className="flex items-center justify-between">
                 <label
@@ -459,7 +675,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                   className="text-xs sm:text-sm font-bold text-charcoal flex items-center gap-2 select-none"
                 >
                   <MapPin className="w-4 h-4 text-botanical shrink-0" />
-                  <span>Address *</span>
+                  <span>Address in Calgary *</span>
                 </label>
                 <span className="text-[10px] text-botanical font-medium">✓ No travel fees in Calgary</span>
               </div>
@@ -491,7 +707,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
               )}
             </div>
 
-            {/* 9. Separate Dedicated Postal Code Field (Compact) */}
+            {/* 9. Separate Dedicated Postal Code Field */}
             <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0 sm:col-span-5 lg:col-span-4">
               <div className="flex items-center justify-between">
                 <label
@@ -608,10 +824,20 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
                 type="submit"
                 id="booking-submit-btn"
                 name="submit-booking"
-                className="w-full bg-nordic-mist hover:bg-nordic-hover text-white font-bold h-14 px-6 rounded-xl shadow-spa-card hover:shadow-spa-hover transition-all text-base flex items-center justify-center gap-2.5 border border-oak/30 cursor-pointer group box-border"
+                disabled={isSubmitting}
+                className="w-full bg-nordic-mist hover:bg-nordic-hover text-white font-bold h-14 px-6 rounded-xl shadow-spa-card hover:shadow-spa-hover transition-all text-base flex items-center justify-center gap-2.5 border border-oak/30 cursor-pointer group box-border disabled:opacity-75"
               >
-                <MessageCircle className="w-5 h-5 text-oak group-hover:scale-110 transition-transform" />
-                <span>Confirm & Request Appointment via WhatsApp</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 text-oak animate-spin" />
+                    <span>Reserving Session & Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="w-5 h-5 text-oak group-hover:scale-110 transition-transform" />
+                    <span>Confirm & Request Appointment via WhatsApp</span>
+                  </>
+                )}
               </button>
             </div>
 
