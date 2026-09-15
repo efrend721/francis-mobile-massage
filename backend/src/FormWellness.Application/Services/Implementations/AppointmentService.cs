@@ -272,6 +272,100 @@ public class AppointmentService : IAppointmentService
             .ToListAsync(ct);
     }
 
+    public async Task<AppointmentDto> UpdateAppointmentAsync(Guid appointmentId, UpdateAppointmentRequest request, CancellationToken ct = default)
+    {
+        var app = await _db.Appointments
+            .Include(a => a.Client)
+            .Include(a => a.Therapist)
+            .Include(a => a.Service)
+            .Include(a => a.Status)
+            .Include(a => a.Quadrant)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId, ct)
+            ?? throw new NotFoundException("Appointment", appointmentId);
+
+        if (_currentUser.IsClient && app.ClientId != _currentUser.UserId)
+            throw new ForbiddenException("You cannot modify another client's appointment");
+
+        if (request.ServiceId.HasValue && request.ServiceId.Value != app.ServiceId)
+        {
+            var service = await _db.Services.FirstOrDefaultAsync(s => s.Id == request.ServiceId.Value && s.IsActive, ct)
+                ?? throw new NotFoundException("Service", request.ServiceId.Value);
+            app.ServiceId = service.Id;
+            app.Service = service;
+        }
+
+        if (request.DurationMinutes.HasValue)
+        {
+            app.DurationMinutes = request.DurationMinutes.Value;
+        }
+
+        // Recalculate price
+        decimal basePrice = app.Service.BasePrice;
+        if (app.DurationMinutes == 90) basePrice += 35m;
+        else if (app.DurationMinutes == 120) basePrice += 70m;
+        app.Price = basePrice;
+
+        if (request.ScheduledAt.HasValue)
+        {
+            app.ScheduledAt = request.ScheduledAt.Value.ToUniversalTime();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.QuadrantCode))
+        {
+            var quadrant = await _db.CalgaryQuadrants.FirstOrDefaultAsync(q => q.Code == request.QuadrantCode && q.IsActive, ct);
+            if (quadrant != null)
+            {
+                app.QuadrantId = quadrant.Id;
+                app.Quadrant = quadrant;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ServiceAddress))
+        {
+            app.ServiceAddress = request.ServiceAddress;
+        }
+
+        if (request.PostalCode != null)
+        {
+            app.PostalCode = request.PostalCode;
+        }
+
+        if (request.ClientSpecialNotes != null)
+        {
+            app.ClientSpecialNotes = request.ClientSpecialNotes;
+        }
+
+        app.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        return new AppointmentDto
+        {
+            Id = app.Id,
+            ClientId = app.ClientId,
+            ClientName = app.Client.Name,
+            ClientEmail = app.Client.Email,
+            ClientPhone = app.Client.Phone,
+            ServiceId = app.ServiceId,
+            ServiceTitle = app.Service.Title,
+            TherapistName = app.Therapist.Name,
+            StatusId = app.StatusId,
+            StatusCode = app.Status.Code,
+            StatusName = app.Status.Name,
+            StatusColorHex = app.Status.ColorHex,
+            QuadrantCode = app.Quadrant.Code,
+            QuadrantName = app.Quadrant.Name,
+            DurationMinutes = app.DurationMinutes,
+            Price = app.Price,
+            ScheduledAt = app.ScheduledAt,
+            BufferMinutes = app.BufferMinutes,
+            ServiceAddress = app.ServiceAddress,
+            PostalCode = app.PostalCode,
+            ClientSpecialNotes = app.ClientSpecialNotes,
+            TherapistClinicalNotes = app.TherapistClinicalNotes,
+            CreatedAt = app.CreatedAt
+        };
+    }
+
     public async Task<AppointmentDto> CancelAppointmentAsync(Guid appointmentId, CancellationToken ct = default)
     {
         var app = await _db.Appointments

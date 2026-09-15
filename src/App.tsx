@@ -7,6 +7,7 @@ import { ServicesSection } from './components/ServicesSection';
 import { Testimonials } from './components/Testimonials';
 import { AboutUs } from './components/AboutUs';
 import { BookingForm } from './components/BookingForm';
+import { ClientPortal } from './components/ClientPortal';
 import { IntakeFormBanner } from './components/IntakeFormBanner';
 import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
@@ -103,6 +104,12 @@ export const AppContent: React.FC = () => {
         {/* Independent Fast Booking Form */}
         <BookingForm
           preselectedServiceId={selectedServiceId}
+          onOpenIntakeForm={handleOpenIntakeForm}
+        />
+
+        {/* Client Portal Section (My Appointments, Rescheduling & Clinical Intake) */}
+        <ClientPortal
+          onOpenBooking={handleScrollToBooking}
           onOpenIntakeForm={handleOpenIntakeForm}
         />
 

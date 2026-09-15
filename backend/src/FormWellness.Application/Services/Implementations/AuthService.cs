@@ -94,6 +94,7 @@ public class AuthService : IAuthService
         else
         {
             client.Name = googleUser.Name;
+            client.IsGoogleUser = true;
             if (!string.IsNullOrEmpty(googleUser.Picture)) client.Picture = googleUser.Picture;
             if (quadrantId.HasValue) client.DefaultQuadrantId = quadrantId;
             if (!string.IsNullOrWhiteSpace(request.Address)) client.DefaultAddress = request.Address;

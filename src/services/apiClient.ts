@@ -12,19 +12,36 @@ export interface ApiResponse<T> {
   errors: string[];
 }
 
+export const AUTH_TOKEN_KEY = 'form_wellness_jwt_token';
+
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
   
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+    let errorDetail = `API request failed (${response.status}: ${response.statusText})`;
+    try {
+      const errorJson = await response.json();
+      if (errorJson.message) {
+        errorDetail = errorJson.message;
+      } else if (Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
+        errorDetail = errorJson.errors.join(', ');
+      }
+    } catch {
+      // JSON parse failed, use fallback
+    }
+    throw new Error(errorDetail);
   }
 
   const json: ApiResponse<T> = await response.json();
@@ -34,3 +51,4 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 
   return json.data;
 }
+
