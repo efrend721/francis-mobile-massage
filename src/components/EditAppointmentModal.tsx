@@ -206,17 +206,22 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     const postalFormatted = postalCode ? postalCode.trim().toUpperCase() : '';
 
     const messageLines = [
-      '🌿 *FORM WELLNESS — RESCHEDULED APPOINTMENT*',
+      '*FORM WELLNESS & RECOVERY*',
+      '_Mobile Massage Therapy — Calgary_',
+      '----------------------------------------',
       '',
-      '📋 *UPDATED SESSION DETAILS*',
-      `💆 Service: *${srvTitle} (${duration})*`,
-      `📅 New Date & Time: *${prettyDate} at ${preferredTime}*`,
-      `🏷️ Ref Code: *#FW-${appt.id.slice(0, 8).toUpperCase()}*`,
+      '*RESCHEDULED APPOINTMENT*',
       '',
-      '📍 *CALGARY SERVICE LOCATION*',
-      `🏡 Address: *${address.trim()}${postalFormatted ? ` (${postalFormatted})` : ''}*`,
-      specialNotes.trim() ? `📝 Notes: *${specialNotes.trim()}*` : '',
+      '*Updated Session Details:*',
+      `• Service: *${srvTitle} (${duration})*`,
+      `• New Date & Time: *${prettyDate} at ${preferredTime}*`,
+      `• Booking Ref: *#FW-${appt.id.slice(0, 8).toUpperCase()}*`,
       '',
+      '*Service Location:*',
+      `• Address: *${address.trim()}${postalFormatted ? ` (${postalFormatted})` : ''}*`,
+      specialNotes.trim() ? `• Notes: *${specialNotes.trim()}*` : '',
+      '',
+      '----------------------------------------',
       '_Please confirm this updated schedule at your earliest convenience!_',
     ].filter((line) => line !== '');
 
