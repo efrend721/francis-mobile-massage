@@ -12,7 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? "Host=localhost;Port=5432;Database=form_wellness_db;Username=postgres;Password=postgres";
+            ?? "Server=localhost;Database=form_wellness_db;Trusted_Connection=True;TrustServerCertificate=True;";
 
         services.AddDbContext<FormWellnessDbContext>(options =>
             options.UseSqlServer(connectionString, b =>

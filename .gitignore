@@ -61,4 +61,7 @@ Thumbs.db
 *.secrets/
 client_secret*.json
 google_oauth*.json
+appsettings*.local.json
+appsettings.Production.json
+appsettings.local.json
 

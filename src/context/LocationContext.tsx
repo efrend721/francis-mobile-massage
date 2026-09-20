@@ -32,9 +32,7 @@ const DEFAULT_LOCATION: UserLocation = {
   expiresAt: 0,
 };
 
-const GOOGLE_MAPS_API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
-  'REDACTED_GOOGLE_MAPS_API_KEY';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 /**
  * Accurately determines Calgary quadrant from coordinates or address string

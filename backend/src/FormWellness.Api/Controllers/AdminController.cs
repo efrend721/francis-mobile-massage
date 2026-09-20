@@ -15,35 +15,35 @@ public class AdminController(IAdminService adminService) : BaseApiController
         var fromUtc = from?.ToUniversalTime() ?? DateTime.UtcNow.Date.AddDays(-7);
         var toUtc = to?.ToUniversalTime() ?? DateTime.UtcNow.Date.AddDays(30);
 
-        var result = await _adminService.GetCalendarAppointmentsAsync(fromUtc, toUtc, ct);
+        var result = await adminService.GetCalendarAppointmentsAsync(fromUtc, toUtc, ct);
         return Success(result);
     }
 
     [HttpPut("appointments/{id:guid}/status")]
     public async Task<ActionResult<ApiResponse<AppointmentDto>>> UpdateStatus(Guid id, [FromBody] UpdateAppointmentStatusRequest request, CancellationToken ct)
     {
-        var result = await _adminService.UpdateAppointmentStatusAsync(id, request.StatusCode, ct);
+        var result = await adminService.UpdateAppointmentStatusAsync(id, request.StatusCode, ct);
         return Success(result, "Status updated");
     }
 
     [HttpPut("appointments/{id:guid}/clinical-notes")]
     public async Task<ActionResult<ApiResponse<AppointmentDto>>> UpdateClinicalNotes(Guid id, [FromBody] UpdateClinicalNotesRequest request, CancellationToken ct)
     {
-        var result = await _adminService.UpdateClinicalNotesAsync(id, request.ClinicalNotes, ct);
+        var result = await adminService.UpdateClinicalNotesAsync(id, request.ClinicalNotes, ct);
         return Success(result, "Clinical notes saved");
     }
 
     [HttpGet("working-schedules")]
     public async Task<ActionResult<ApiResponse<List<WorkingScheduleDto>>>> GetWorkingSchedules(CancellationToken ct)
     {
-        var result = await _adminService.GetWorkingSchedulesAsync(ct);
+        var result = await adminService.GetWorkingSchedulesAsync(ct);
         return Success(result);
     }
 
     [HttpPut("working-schedules")]
     public async Task<ActionResult<ApiResponse<string>>> UpdateWorkingSchedules([FromBody] UpdateWorkingScheduleRequest request, CancellationToken ct)
     {
-        await _adminService.UpdateWorkingSchedulesAsync(request, ct);
+        await adminService.UpdateWorkingSchedulesAsync(request, ct);
         return Success("Schedules updated successfully");
     }
 
@@ -53,35 +53,35 @@ public class AdminController(IAdminService adminService) : BaseApiController
         var fromUtc = from?.ToUniversalTime() ?? DateTime.UtcNow.Date;
         var toUtc = to?.ToUniversalTime() ?? DateTime.UtcNow.Date.AddMonths(2);
 
-        var result = await _adminService.GetBlackoutsAsync(fromUtc, toUtc, ct);
+        var result = await adminService.GetBlackoutsAsync(fromUtc, toUtc, ct);
         return Success(result);
     }
 
     [HttpPost("blackouts")]
     public async Task<ActionResult<ApiResponse<ScheduleBlackoutDto>>> CreateBlackout([FromBody] CreateScheduleBlackoutRequest request, CancellationToken ct)
     {
-        var result = await _adminService.CreateBlackoutAsync(request, ct);
+        var result = await adminService.CreateBlackoutAsync(request, ct);
         return Success(result, "Blackout period created");
     }
 
     [HttpDelete("blackouts/{id:guid}")]
     public async Task<ActionResult<ApiResponse<string>>> DeleteBlackout(Guid id, CancellationToken ct)
     {
-        await _adminService.DeleteBlackoutAsync(id, ct);
+        await adminService.DeleteBlackoutAsync(id, ct);
         return Success("Blackout removed successfully");
     }
 
     [HttpGet("clients/{clientId}/follow-ups")]
     public async Task<ActionResult<ApiResponse<List<ClientFollowUpDto>>>> GetFollowUps(string clientId, CancellationToken ct)
     {
-        var result = await _adminService.GetClientFollowUpsAsync(clientId, ct);
+        var result = await adminService.GetClientFollowUpsAsync(clientId, ct);
         return Success(result);
     }
 
     [HttpPost("clients/follow-ups")]
     public async Task<ActionResult<ApiResponse<ClientFollowUpDto>>> CreateFollowUp([FromBody] CreateClientFollowUpRequest request, CancellationToken ct)
     {
-        var result = await _adminService.CreateClientFollowUpAsync(request, ct);
+        var result = await adminService.CreateClientFollowUpAsync(request, ct);
         return Success(result, "Follow-up record logged");
     }
 }
