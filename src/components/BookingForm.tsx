@@ -303,27 +303,26 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
 
     const postalClean = formData.postalCode ? formData.postalCode.trim().toUpperCase() : '';
 
-    // Create WhatsApp message with structured, executive layout
+    // Create WhatsApp message with 100% universal emojis and clean layout
     const messageLines = [
       '🌿 *FORM WELLNESS — NEW IN-HOME BOOKING*',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
       '📋 *TREATMENT DETAILS*',
-      `💆 *Service:* ${selectedService.title}`,
-      `⏱️ *Duration:* ${formData.duration}`,
-      `📅 *Date & Time:* ${prettyDate} at ${formData.preferredTime}`,
-      `🏷️ *Ref Code:* #${appointmentRef}`,
+      `💆 Service: *${selectedService.title}*`,
+      `⏱️ Duration: *${formData.duration}*`,
+      `📅 Date & Time: *${prettyDate} at ${formData.preferredTime}*`,
+      `🏷️ Ref Code: *#${appointmentRef}*`,
       '',
       '👤 *CLIENT INFORMATION*',
-      `• *Name:* ${formData.fullName.trim()}`,
-      `• *Phone:* ${formData.phone.trim()}`,
-      `• *Email:* ${formData.email.trim()}`,
+      `🔹 Name: *${formData.fullName.trim()}*`,
+      `📞 Phone: *${formData.phone.trim()}*`,
+      `✉️ Email: *${formData.email.trim()}*`,
       '',
       '📍 *CALGARY SERVICE LOCATION*',
-      `• *Address:* ${formData.addressArea.trim()}`,
-      postalClean ? `• *Postal Code:* ${postalClean} (${quadrantCode} Quadrant)` : `• *Quadrant:* ${quadrantCode} Calgary`,
-      formData.specialNotes.trim() ? `• *Special Notes:* ${formData.specialNotes.trim()}` : '',
+      `🏡 Address: *${formData.addressArea.trim()}*`,
+      postalClean ? `🗺️ Area: *${postalClean} (${quadrantCode} Calgary)*` : `🗺️ Area: *${quadrantCode} Calgary*`,
+      formData.specialNotes.trim() ? `📝 Special Notes: *${formData.specialNotes.trim()}*` : '',
       '',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━',
       '_Looking forward to your confirmation!_',
     ].filter((line) => line !== '');
 

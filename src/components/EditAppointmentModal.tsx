@@ -207,17 +207,16 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
     const messageLines = [
       '🌿 *FORM WELLNESS — RESCHEDULED APPOINTMENT*',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
       '📋 *UPDATED SESSION DETAILS*',
-      `💆 *Service:* ${srvTitle} (${duration})`,
-      `📅 *New Date & Time:* ${prettyDate} at ${preferredTime}`,
-      `🏷️ *Ref Code:* #FW-${appt.id.slice(0, 8).toUpperCase()}`,
+      `💆 Service: *${srvTitle} (${duration})*`,
+      `📅 New Date & Time: *${prettyDate} at ${preferredTime}*`,
+      `🏷️ Ref Code: *#FW-${appt.id.slice(0, 8).toUpperCase()}*`,
       '',
       '📍 *CALGARY SERVICE LOCATION*',
-      `• *Address:* ${address.trim()}${postalFormatted ? ` (${postalFormatted})` : ''}`,
-      specialNotes.trim() ? `• *Notes:* ${specialNotes.trim()}` : '',
+      `🏡 Address: *${address.trim()}${postalFormatted ? ` (${postalFormatted})` : ''}*`,
+      specialNotes.trim() ? `📝 Notes: *${specialNotes.trim()}*` : '',
       '',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━',
       '_Please confirm this updated schedule at your earliest convenience!_',
     ].filter((line) => line !== '');
 

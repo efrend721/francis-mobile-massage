@@ -121,13 +121,13 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       const timeFormatted = apptDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
       const message = `🌿 *FORM WELLNESS — APPOINTMENT CANCELLATION*
-━━━━━━━━━━━━━━━━━━━━━━━━━
+ 
 📋 *CANCELLED SESSION*
-• *Ref Code:* #FW-${appointmentToCancel.id.slice(0, 8).toUpperCase()}
-• *Service:* ${appointmentToCancel.serviceTitle}
-• *Original Time:* ${dateFormatted} at ${timeFormatted}
-• *Address:* ${appointmentToCancel.serviceAddress}
-━━━━━━━━━━━━━━━━━━━━━━━━━
+🏷️ Ref Code: *#FW-${appointmentToCancel.id.slice(0, 8).toUpperCase()}*
+💆 Service: *${appointmentToCancel.serviceTitle}*
+📅 Original Time: *${dateFormatted} at ${timeFormatted}*
+🏡 Address: *${appointmentToCancel.serviceAddress}*
+
 _Thank you for your understanding._`;
 
       const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
