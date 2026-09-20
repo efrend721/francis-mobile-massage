@@ -284,22 +284,48 @@ export const BookingForm: React.FC<BookingFormProps> = ({ preselectedServiceId, 
     setIsSubmitting(false);
     setSubmitted(true);
 
-    // Create WhatsApp message with booking confirmation reference
+    // Format date nicely (e.g. "Mon, Sep 21, 2026")
+    let prettyDate = formData.preferredDate;
+    try {
+      const [y, m, d] = formData.preferredDate.split('-').map(Number);
+      if (y && m && d) {
+        const dObj = new Date(y, m - 1, d);
+        prettyDate = dObj.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+    } catch {
+      // fallback to raw
+    }
+
+    const postalClean = formData.postalCode ? formData.postalCode.trim().toUpperCase() : '';
+
+    // Create WhatsApp message with structured, executive layout
     const messageLines = [
-      '🌿 *Hello Francis, I have booked a Mobile Massage Treatment!*',
-      `- *Booking Ref:* ${appointmentRef}`,
-      `- *Treatment:* ${selectedService.title}`,
-      `- *Duration:* ${formData.duration}`,
-      `- *Client Name:* ${formData.fullName}`,
-      `- *Phone:* ${formData.phone}`,
-      `- *Email:* ${formData.email}`,
-      `- *Date & Time:* ${formData.preferredDate} at ${formData.preferredTime}`,
-      `- *Calgary Address:* ${formData.addressArea}`,
-      `- *Postal Code:* ${formData.postalCode?.trim().toUpperCase()}`,
-      `- *Quadrant:* ${quadrantCode}`,
-      formData.specialNotes.trim() ? `- *Special Notes:* ${formData.specialNotes.trim()}` : '',
-      '\n_Looking forward to your confirmation!_'
-    ].filter(Boolean);
+      '🌿 *FORM WELLNESS — NEW IN-HOME BOOKING*',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '📋 *TREATMENT DETAILS*',
+      `💆 *Service:* ${selectedService.title}`,
+      `⏱️ *Duration:* ${formData.duration}`,
+      `📅 *Date & Time:* ${prettyDate} at ${formData.preferredTime}`,
+      `🏷️ *Ref Code:* #${appointmentRef}`,
+      '',
+      '👤 *CLIENT INFORMATION*',
+      `• *Name:* ${formData.fullName.trim()}`,
+      `• *Phone:* ${formData.phone.trim()}`,
+      `• *Email:* ${formData.email.trim()}`,
+      '',
+      '📍 *CALGARY SERVICE LOCATION*',
+      `• *Address:* ${formData.addressArea.trim()}`,
+      postalClean ? `• *Postal Code:* ${postalClean} (${quadrantCode} Quadrant)` : `• *Quadrant:* ${quadrantCode} Calgary`,
+      formData.specialNotes.trim() ? `• *Special Notes:* ${formData.specialNotes.trim()}` : '',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '_Looking forward to your confirmation!_',
+    ].filter((line) => line !== '');
 
     const message = messageLines.join('\n');
     const whatsappUrl = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;

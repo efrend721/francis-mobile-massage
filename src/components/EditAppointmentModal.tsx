@@ -186,16 +186,42 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     const appt = updatedSuccess || appointment;
     const srvTitle = services.find((s) => s.numericId === selectedServiceId)?.title || appt.serviceTitle;
 
-    const message = `🌿 *Hello Francis, I have rescheduled/updated my Mobile Massage:*
-📋 *Booking Ref:* #FW-${appt.id.slice(0, 8).toUpperCase()}
-💆 *Service:* ${srvTitle} (${duration})
-📅 *New Date & Time:* ${preferredDate} at ${preferredTime}
-📍 *Address:* ${address} (${postalCode.toUpperCase()})
-${specialNotes.trim() ? `📝 *Notes:* ${specialNotes.trim()}` : ''}
+    // Format date nicely (e.g. "Mon, Sep 21, 2026")
+    let prettyDate = preferredDate;
+    try {
+      const [y, m, d] = preferredDate.split('-').map(Number);
+      if (y && m && d) {
+        const dObj = new Date(y, m - 1, d);
+        prettyDate = dObj.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+    } catch {
+      // fallback
+    }
 
-_Please confirm this new scheduled time at your earliest convenience!_`;
+    const postalFormatted = postalCode ? postalCode.trim().toUpperCase() : '';
 
-    const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
+    const messageLines = [
+      '🌿 *FORM WELLNESS — RESCHEDULED APPOINTMENT*',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '📋 *UPDATED SESSION DETAILS*',
+      `💆 *Service:* ${srvTitle} (${duration})`,
+      `📅 *New Date & Time:* ${prettyDate} at ${preferredTime}`,
+      `🏷️ *Ref Code:* #FW-${appt.id.slice(0, 8).toUpperCase()}`,
+      '',
+      '📍 *CALGARY SERVICE LOCATION*',
+      `• *Address:* ${address.trim()}${postalFormatted ? ` (${postalFormatted})` : ''}`,
+      specialNotes.trim() ? `• *Notes:* ${specialNotes.trim()}` : '',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '_Please confirm this updated schedule at your earliest convenience!_',
+    ].filter((line) => line !== '');
+
+    const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(messageLines.join('\n'))}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 

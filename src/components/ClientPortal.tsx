@@ -111,13 +111,24 @@ export const ClientPortal: React.FC<ClientPortalProps> = ({
       );
 
       // Open optional WhatsApp cancellation notice
-      const message = `🌿 *Hello Francis, I need to cancel my Mobile Massage appointment:*
-📋 *Booking Ref:* #FW-${appointmentToCancel.id.slice(0, 8).toUpperCase()}
-💆 *Service:* ${appointmentToCancel.serviceTitle}
-📅 *Original Time:* ${new Date(appointmentToCancel.scheduledAt).toLocaleDateString()} at ${new Date(appointmentToCancel.scheduledAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-📍 *Address:* ${appointmentToCancel.serviceAddress}
+      const apptDate = new Date(appointmentToCancel.scheduledAt);
+      const dateFormatted = apptDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const timeFormatted = apptDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-_Thank you for understanding._`;
+      const message = `🌿 *FORM WELLNESS — APPOINTMENT CANCELLATION*
+━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 *CANCELLED SESSION*
+• *Ref Code:* #FW-${appointmentToCancel.id.slice(0, 8).toUpperCase()}
+• *Service:* ${appointmentToCancel.serviceTitle}
+• *Original Time:* ${dateFormatted} at ${timeFormatted}
+• *Address:* ${appointmentToCancel.serviceAddress}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+_Thank you for your understanding._`;
 
       const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
       window.open(url, '_blank', 'noopener,noreferrer');

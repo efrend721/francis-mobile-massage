@@ -234,29 +234,36 @@ export const IntakeFormModal: React.FC<IntakeFormModalProps> = ({
   const handleSendViaWhatsApp = () => {
     const intakeRef = savedIntake ? `#INTAKE-${savedIntake.id.slice(0, 8).toUpperCase()}` : '#INTAKE-CALGARY';
 
-    const message = `🌿 *FORM - Digital Clinical Intake Summary*
-📋 *Intake Ref:* ${intakeRef}
-👤 *Client:* ${formData.fullName}
-📞 *Phone:* ${formData.phone}
-📧 *Email:* ${formData.email || 'N/A'}
-📍 *Calgary Quadrant:* ${formData.calgaryQuadrant} (${formData.isFirstVisit ? 'First Visit' : 'Returning Client'})
+    const messageLines = [
+      '🌿 *FORM WELLNESS — DIGITAL CLINICAL INTAKE*',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '📋 *CLIENT INTAKE SUMMARY*',
+      `🏷️ *Ref Code:* ${intakeRef}`,
+      `👤 *Client:* ${formData.fullName}`,
+      `📞 *Phone:* ${formData.phone}`,
+      `📧 *Email:* ${formData.email || 'N/A'}`,
+      `📍 *Location:* ${formData.calgaryQuadrant} Quadrant (${formData.isFirstVisit ? 'First Visit' : 'Returning Client'})`,
+      '',
+      '🎯 *FOCUS & PAIN AREAS*',
+      formData.focusAreas.length > 0 ? formData.focusAreas.map((a) => `• ${a}`).join('\n') : '• General full-body relaxation',
+      '',
+      '🩺 *HEALTH & CLINICAL HISTORY*',
+      `• *Blood Pressure Concern:* ${formData.hasHighBloodPressure ? 'Yes' : 'No'}`,
+      `• *Pregnant:* ${formData.isPregnant ? `Yes (${formData.pregnancyWeeks || 'weeks not specified'})` : 'No'}`,
+      `• *Recent Surgeries/Injuries:* ${formData.hasRecentSurgeriesOrInjuries ? `Yes (${formData.surgeriesDetails})` : 'No'}`,
+      `• *Allergies to Oils/Nuts:* ${formData.hasAllergiesToOilsOrNuts ? `Yes (${formData.allergiesDetails})` : 'None'}`,
+      formData.otherHealthNotes ? `• *Additional Notes:* ${formData.otherHealthNotes}` : '',
+      '',
+      '💆 *TREATMENT PREFERENCES*',
+      `• *Pressure Level:* ${formData.pressurePreference.toUpperCase()}`,
+      `• *Aromatherapy:* ${formData.aromatherapyPreference.toUpperCase()}`,
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      `✍️ *Signed Digitally by:* ${formData.signatureName || formData.fullName}`,
+      '_Alberta PIPA Consent & Cancellation Policy Accepted_',
+    ].filter((line) => line !== '');
 
-🎯 *Focus Areas:*
-${formData.focusAreas.length > 0 ? formData.focusAreas.map((a) => `• ${a}`).join('\n') : '• General full body relaxation'}
-
-🩺 *Health History:*
-• High/Low Blood Pressure: ${formData.hasHighBloodPressure ? 'Yes' : 'No'}
-• Pregnant: ${formData.isPregnant ? `Yes (${formData.pregnancyWeeks || 'weeks not specified'})` : 'No'}
-• Recent Surgeries/Injuries: ${formData.hasRecentSurgeriesOrInjuries ? `Yes (${formData.surgeriesDetails})` : 'No'}
-• Allergies to Oils/Nuts: ${formData.hasAllergiesToOilsOrNuts ? `Yes (${formData.allergiesDetails})` : 'No'}
-${formData.otherHealthNotes ? `• Additional Health Notes: ${formData.otherHealthNotes}` : ''}
-
-💆 *Session Preferences:*
-• Pressure Level: ${formData.pressurePreference.toUpperCase()}
-• Aromatherapy Oil: ${formData.aromatherapyPreference.toUpperCase()}
-✅ *PIPA Alberta Consent & 24h Policy Signed by:* ${formData.signatureName || formData.fullName}`;
-
-    const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${BUSINESS_INFO.whatsappNumber}?text=${encodeURIComponent(messageLines.join('\n'))}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
